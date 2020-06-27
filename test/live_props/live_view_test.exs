@@ -48,7 +48,7 @@ defmodule LiveProps.LiveViewTest do
           use Phoenix.LiveView
           use LiveProps.LiveView
 
-          prop(:prop1, :string, default: "prop1")
+          prop :prop1, :string, default: "prop1"
         end
       end
     end

@@ -1,21 +1,27 @@
 defmodule LiveProps.Factory do
   @moduledoc """
-  Functions to build objects to be used as module attributes
+  Functions to validate and build representations of props and state.
+
   """
   alias LiveProps.Validations
 
-  @spec build_attribute(
-          attribute :: atom(),
+  @spec build_attribute!(
+          attribute :: :prop | :state,
           module :: module(),
           name :: atom(),
           type :: atom(),
           opts :: list()
         ) :: map()
 
-  def build_attribute(attribute, caller, name, type, opts \\ []) do
-    Validations.validate_opts!(attribute, name, type, opts, caller)
+  @doc """
+  Validates and builds a prop or state definition.
 
-    inputs = merge_inputs(caller, name, type, opts)
+  Returns a map.  Raises on validation errors.
+  """
+  def build_attribute!(attribute, name, type, opts, module) do
+    Validations.validate_opts!(attribute, name, type, opts)
+
+    inputs = merge_inputs(name, type, opts, module)
 
     attribute
     |> get_computed_keys()
@@ -23,10 +29,8 @@ defmodule LiveProps.Factory do
     |> maybe_capture_compute_function()
   end
 
-  @spec merge_inputs(caller :: Macro.Env.t(), name :: atom(), type :: atom(), opts :: list()) ::
-          map()
-  defp merge_inputs(caller, name, type, opts) do
-    Enum.into(opts, %{name: name, type: type, module: caller.module})
+  defp merge_inputs(name, type, opts, module) do
+    Enum.into(opts, %{name: name, type: type, module: module})
   end
 
   defp compute_keys(keys, attribute, inputs) do
@@ -35,20 +39,23 @@ defmodule LiveProps.Factory do
     end)
   end
 
-  defp maybe_capture_compute_function(%{default: default} = map) when is_function(default) do
-    # IO.inspect(Function.info(default), label: "function info")
-    map
+  defp maybe_capture_compute_function(%{compute: compute} = map) when is_atom(compute) do
+    Map.put(map, :compute, Function.capture(map.module, compute, 1))
   end
 
   defp maybe_capture_compute_function(map) do
     map
   end
 
-  defp make_struct!(map, :live_prop) do
-    struct!(LiveProps.Prop, map)
+  # defp make_struct!(map, :live_prop) do
+  #   struct!(LiveProps.Prop, map)
+  # end
+
+  defp get_computed_keys(:prop) do
+    [:has_default, :is_computed]
   end
 
-  defp get_computed_keys(:live_prop) do
+  defp get_computed_keys(:state) do
     [:has_default, :is_computed]
   end
 
@@ -60,9 +67,9 @@ defmodule LiveProps.Factory do
 
   defp build_key(_, :has_default, _), do: false
 
-  defp build_key(:live_prop, :is_computed, %{compute: _compute}) do
+  defp build_key(_, :is_computed, %{compute: _compute}) do
     true
   end
 
-  defp build_key(:live_prop, :is_computed, _), do: false
+  defp build_key(_, :is_computed, _), do: false
 end

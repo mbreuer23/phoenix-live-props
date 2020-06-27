@@ -44,28 +44,6 @@ defmodule LiveProps.Validations do
     raise ArgumentError, "Type should be an atom; receieved #{inspect(type)}"
   end
 
-  # defp validate_opts(attribute, opts) do
-  #   valid_opts = valid_opts_for_attribute(attribute)
-  #   required_opts = required_opts_for_attribute(attribute)
-
-  #   with true <- Keyword.keyword?(opts),
-  #        supplied_keys <- Keyword.keys(opts),
-  #        :ok <- validate_required_opts(supplied_keys, required_opts),
-  #        :ok <- validate_no_extra_opts(supplied_keys, valid_opts),
-  #        :ok <- validate_each_opt(caller, attribute, opts) do
-  #     :ok
-  #   else
-  #     false ->
-  #       {:error, "Opts should be a keyword list, got #{inspect(opts)}"}
-
-  #     {:error, message} ->
-  #       {:error, message}
-
-  #       # unknown ->
-  #       #   {:error, "Invalid options: #{inspect(unknown)}"}
-  #   end
-  # end
-
   defp valid_opts_for_attribute(:prop) do
     [:default, :compute, :required, :doc]
   end

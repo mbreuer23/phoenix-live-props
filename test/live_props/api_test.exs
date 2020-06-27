@@ -3,119 +3,139 @@ defmodule LiveProps.APITest do
 
   import LiveProps.TestHelpers
 
-  alias Phoenix.LiveView.Socket
+  describe "Module ValidProps" do
+    defmodule ValidProps do
+      require LiveProps.API
 
-  # defmodule PropsTest do
-  #   require LiveProps.API
+      use LiveProps.API, include: [:prop]
 
-  #   use LiveProps.API, include: [:prop]
+      prop(:id, :atom, required: true)
+      prop(:user, :map, required: false, default: %{id: 1})
+      prop(:user_name, :string, compute: :get_user_name)
+      prop(:user_name_2, :string, compute: &ValidProps.get_user_name/1)
+      # prop(:identity, :integer, compute: fn _ -> 1 end)
 
-  #   prop(:id, :atom, required: true)
-  #   prop(:user, :map, required: false, default: %{id: 1})
-  #   prop(:user_name, :string, compute: :get_user_name)
-  #   prop(:user_name_2, :string, compute: &PropsTest.get_user_name/1)
+      def get_user_name(assigns) do
+        "user-#{assigns.user.id}"
+      end
+    end
 
-  #   def get_user_name(assigns) do
-  #     "user-#{assigns.user.id}"
-  #   end
-  # end
+    test "has props defined correctly" do
+      names = for p <- ValidProps.__props__(:all), do: p.name
+      required = for p <- ValidProps.__props__(:required), do: p.name
+      defaults = for p <- ValidProps.__props__(:defaults), do: p.name
+      computed = for p <- ValidProps.__props__(:computed), do: p.name
 
-  describe "Props" do
-  #   test "inject functions into using module" do
-  #     functions =
-  #       PropsTest.__info__(:functions)
-  #       |> Map.new()
+      assert [:id, :user, :user_name, :user_name_2] == names
+      assert [:id] == required
+      assert [:user] == defaults
+      assert [:user_name, :user_name_2] == computed
+    end
 
-  #     assert %{
-  #              __props__: 0,
-  #              __get_prop_by_name__: 1,
-  #              __assign_defaults_props__: 1
-  #            } = functions
-  #   end
+    test "puts default props correctly" do
+      # assign doesnt exist
+      assigns = ValidProps.__put_default_props__(%{})
 
-  #   test "lists props" do
-  #     assert 4 =
-  #              PropsTest.__props__()
-  #              |> length()
-  #   end
+      assert %{
+               user: %{id: 1}
+             } = assigns
 
-  #   test "defines property correctly" do
-  #     assert %{
-  #              name: :id,
-  #              type: :atom,
-  #              module: PropsTest,
-  #              required: true,
-  #              doc: nil,
-  #              has_default: false,
-  #              default: nil,
-  #              is_computed: false
-  #            } = PropsTest.__get_prop_by_name__(:id)
+      # assign already exists
+      assigns = ValidProps.__put_default_props__(%{user: %{id: 3}})
 
-  #     assert %{
-  #              name: :user,
-  #              type: :map,
-  #              module: PropsTest,
-  #              required: false,
-  #              doc: nil,
-  #              has_default: true,
-  #              default: %{id: 1},
-  #              is_computed: false
-  #            } = PropsTest.__get_prop_by_name__(:user)
+      assert %{
+               user: %{id: 3}
+             } = assigns
+    end
 
-  #     assert %{
-  #              name: :user_name,
-  #              type: :string,
-  #              module: PropsTest,
-  #              required: false,
-  #              doc: nil,
-  #              has_default: false,
-  #              default: nil,
-  #              is_computed: true,
-  #              compute: :get_user_name
-  #            } = PropsTest.__get_prop_by_name__(:user_name)
-  #   end
+    test "computes props" do
+      assigns = %{user: %{id: 1}}
+      assigns = ValidProps.__put_computed_props__(assigns)
+      assert assigns.user_name == "user-1"
+      assert assigns.user_name_2 == "user-1"
+    end
+  end
+
+  describe "Module ValidStates" do
+    defmodule ValidStates do
+      use LiveProps.API, include: [:state]
+
+      state(:ready, :boolean, default: false)
+      state(:count, :integer, compute: :get_count)
+      state(:async_count, :integer, compute: :get_count, after_connect: true)
+
+      def get_count(_assigns) do
+        System.unique_integer()
+      end
+    end
+
+    test "defines states" do
+      states = for s <- ValidStates.__states__(:all), do: s.name
+      defaults = for s <- ValidStates.__states__(:defaults), do: s.name
+      computed = for s <- ValidStates.__states__(:computed), do: s.name
+
+      assert [:ready, :count, :async_count] == states
+      assert [:ready] == defaults
+      assert [:count, :async_count] == computed
+    end
+
+    test "puts default states" do
+      assigns = ValidStates.__put_default_states__(%{})
+      assert assigns.ready == false
+      refute Map.has_key?(assigns, :count)
+      refute Map.has_key?(assigns, :async_count)
+    end
+
+    test "puts computed states" do
+      assigns = ValidStates.__put_computed_states__(%{})
+      assert is_integer(assigns.count)
+      refute Map.has_key?(assigns, :async_count)
+    end
+
+    test "puts async states" do
+      assigns = ValidStates.__put_async_states__(%{})
+      assert is_integer(assigns.async_count)
+    end
   end
 
   describe "Props Validations" do
     test "raises compile errors on invalid options" do
-      assert_no_compile ~r/Name should be an atom/ do
+      assert_no_compile ArgumentError, ~r/Name should be an atom/ do
         prop("prop1", :atom)
       end
 
-      assert_no_compile ~r/Type should be an atom/ do
+      assert_no_compile ArgumentError, ~r/Type should be an atom/ do
         prop(:prop, "type")
       end
 
-      assert_no_compile ~r/defined more than once/ do
+      assert_no_compile ArgumentError, ~r/defined more than once/ do
         prop(:prop, :boolean)
         prop(:prop, :atom)
       end
 
-      assert_no_compile ~r/Invalid option/ do
+      assert_no_compile ArgumentError, ~r/Invalid option/ do
         prop(:prop, :boolean, invalid_option: true)
       end
 
-      assert_no_compile ~r/should be a keyword list/ do
+      assert_no_compile ArgumentError, ~r/should be a keyword list/ do
         prop(:prop, :boolean, %{default: true})
       end
 
-      assert_no_compile ~r/undefined function/ do
+      assert_no_compile CompileError, ~r/undefined function/ do
         prop(:test, :map, compute: &undef/1)
       end
-
-      # assert_no_compile ~r/Undefined function/ do
-      #   prop :test, :string, compute: &String.undefined_function/1
-      # end
-
-      # assert_no_compile ~r/Undefined function/ do
-      #   prop :test, :string, compute: :test
-
-      #   def test, do: false
-      # end
     end
   end
 
-  # describe "Props" do
-  #   IO.inspect(PropsTest.__live_props__())
-  # end
+  describe "State Validations" do
+    test "raise errors" do
+      assert_no_compile ArgumentError, ~r/must pass :compute/ do
+        state(:state1, :map, after_connect: true)
+      end
+
+      assert_no_compile ArgumentError, ~r/must be a boolean/ do
+        state(:state1, :map, compute: :do_compute, after_connect: 1)
+      end
+    end
+  end
 end

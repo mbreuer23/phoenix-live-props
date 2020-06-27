@@ -1,9 +1,9 @@
 defmodule LiveProps.TestHelpers do
-  defmacro assert_no_compile(message, do: do_block) do
+  defmacro assert_no_compile(error, message, do: do_block) do
     quote do
-      assert_raise CompileError, unquote(message), fn ->
+      assert_raise unquote(error), unquote(message), fn ->
         defmodule Error do
-          use LiveProps.API, include: [:prop]
+          use LiveProps.API, include: [:prop, :state]
           unquote(do_block)
         end
       end

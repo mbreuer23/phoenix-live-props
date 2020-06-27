@@ -106,13 +106,13 @@ defmodule LiveProps.Validations do
   end
 
   defp validate_opt(_, :after_connect, value, opts) when is_boolean(value) do
-    if opts[:compute],
-      do: nil,
-      else:
-        raise(
-          ArgumentError,
-          "must pass :compute option to use :after_connect"
-        )
+    case opts[:compute] do
+      nil ->
+        raise ArgumentError, "must pass :compute option to use :after_connect"
+
+      _ ->
+        nil
+    end
   end
 
   defp validate_opt(_, :after_connect, value, _) do

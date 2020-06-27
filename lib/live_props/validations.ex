@@ -2,22 +2,21 @@ defmodule LiveProps.Validations do
   @moduledoc """
   Functions to validate options when defining props or state.
 
-  Will raise compiler errors in case of problems
+  Will raise in case of problems
   """
-  @valid_attributes [:live_prop, :live_state]
+  @valid_attributes [:prop, :state]
 
-  def validate_opts!(attribute, name, type, opts, caller) do
-    # raise ArgumentError, "bad args"
-    with :ok <- validate_attribute(attribute),
-         :ok <- validate_name(caller, attribute, name),
-         :ok <- validate_type(type),
-         :ok <- validate_opts(caller, attribute, opts) do
-      :ok
-    else
-      {:error, message} ->
-        file = Path.relative_to_cwd(caller.file)
-        raise %CompileError{line: caller.line, file: file, description: message}
+  def validate_opts!(attribute, name, type, opts) do
+    if Keyword.keyword?(opts) == false do
+      raise ArgumentError, "Options should be a keyword list.  Received #{inspect(opts)}"
     end
+
+    validate_attribute(attribute)
+    validate_name(attribute, name)
+    validate_type(type)
+    validate_required_opts(attribute, opts)
+    validate_no_extra_opts(attribute, opts)
+    validate_each_opt(attribute, opts)
   end
 
   defp validate_attribute(attribute) when attribute in @valid_attributes do
@@ -25,29 +24,16 @@ defmodule LiveProps.Validations do
   end
 
   defp validate_attribute(attribute) do
-    {:error,
-     "Attribute must be one of #{inspect(@valid_attributes)}.  Received #{inspect(attribute)}"}
+    raise ArgumentError,
+          "Attribute must be one of #{inspect(@valid_attributes)}.  Received #{inspect(attribute)}"
   end
 
-  defp validate_name(caller, attribute, name) when is_atom(name) do
-    case name_already_defined?(caller.module, attribute, name) do
-      true ->
-        {:error, "Name #{name} of type #{attribute} defined more than once."}
-
-      false ->
-        :ok
-    end
+  defp validate_name(_attribute, name) when is_atom(name) do
+    :ok
   end
 
-  defp validate_name(_, name, _) do
-    {:error, "Name should be an atom, received #{inspect(name)}"}
-  end
-
-  defp name_already_defined?(module, attribute, name) do
-    Module.get_attribute(module, attribute, [])
-    |> Enum.filter(&(&1.name == name))
-    |> length()
-    |> Kernel.>(0)
+  defp validate_name(name, _) do
+    raise ArgumentError, "Name should be an atom, received #{inspect(name)}"
   end
 
   defp validate_type(type) when is_atom(type) do
@@ -55,106 +41,105 @@ defmodule LiveProps.Validations do
   end
 
   defp validate_type(type) do
-    {:error, "Type should be an atom; receieved #{inspect(type)}"}
+    raise ArgumentError, "Type should be an atom; receieved #{inspect(type)}"
   end
 
-  defp validate_opts(caller, attribute, opts) do
-    valid_opts = valid_opts_for_attribute(attribute)
-    required_opts = required_opts_for_attribute(attribute)
+  # defp validate_opts(attribute, opts) do
+  #   valid_opts = valid_opts_for_attribute(attribute)
+  #   required_opts = required_opts_for_attribute(attribute)
 
-    with true <- Keyword.keyword?(opts),
-         supplied_keys <- Keyword.keys(opts),
-         :ok <- validate_required_opts(supplied_keys, required_opts),
-         :ok <- validate_no_extra_opts(supplied_keys, valid_opts),
-         :ok <- validate_each_opt(caller, attribute, opts) do
-      :ok
-    else
-      false ->
-        {:error, "Opts should be a keyword list, got #{inspect(opts)}"}
+  #   with true <- Keyword.keyword?(opts),
+  #        supplied_keys <- Keyword.keys(opts),
+  #        :ok <- validate_required_opts(supplied_keys, required_opts),
+  #        :ok <- validate_no_extra_opts(supplied_keys, valid_opts),
+  #        :ok <- validate_each_opt(caller, attribute, opts) do
+  #     :ok
+  #   else
+  #     false ->
+  #       {:error, "Opts should be a keyword list, got #{inspect(opts)}"}
 
-      {:error, message} ->
-        {:error, message}
+  #     {:error, message} ->
+  #       {:error, message}
 
-        # unknown ->
-        #   {:error, "Invalid options: #{inspect(unknown)}"}
-    end
-  end
+  #       # unknown ->
+  #       #   {:error, "Invalid options: #{inspect(unknown)}"}
+  #   end
+  # end
 
-  defp valid_opts_for_attribute(:live_prop) do
+  defp valid_opts_for_attribute(:prop) do
     [:default, :compute, :required, :doc]
   end
 
-  defp valid_opts_for_attribute(_attribute) do
-    [:default]
+  defp valid_opts_for_attribute(:state) do
+    [:default, :compute, :after_connect, :doc]
   end
 
-  defp required_opts_for_attribute(:live_state) do
+  defp valid_opts_for_attribute(_) do
     []
   end
 
-  defp required_opts_for_attribute(:live_prop) do
+  defp required_opts_for_attribute(:state) do
     []
   end
 
-  defp validate_required_opts(keys, required_opts) do
-    case required_opts -- keys do
+  defp required_opts_for_attribute(:prop) do
+    []
+  end
+
+  defp validate_required_opts(attribute, opts) do
+    required_opts = required_opts_for_attribute(attribute)
+    supplied_keys = Keyword.keys(opts)
+
+    case required_opts -- supplied_keys do
       [] -> :ok
-      _ -> {:error, "The following options are required. #{inspect(required_opts)}"}
+      _ -> raise ArgumentError, "The following options are required. #{inspect(required_opts)}"
     end
   end
 
-  defp validate_no_extra_opts(supplied_opts, valid_opts) do
+  defp validate_no_extra_opts(attribute, opts) do
+    supplied_opts = Keyword.keys(opts)
+    valid_opts = valid_opts_for_attribute(attribute)
+
     case supplied_opts -- valid_opts do
       [] -> :ok
-      unknown -> {:error, "Invalid options: #{inspect(unknown)}"}
+      unknown -> raise ArgumentError, "Invalid options: #{inspect(unknown)}"
     end
   end
 
-  defp validate_each_opt(caller, attribute, opts) when is_list(opts) do
-    Enum.reduce(opts, :ok, fn
-      {opt, value}, :ok ->
-        validate_option_value(caller, attribute, opt, value)
-
-      _opt, {:error, msg} ->
-        {:error, msg}
-    end)
+  defp validate_each_opt(attribute, opts) when is_list(opts) do
+    for {opt, value} <- opts do
+      validate_opt(attribute, opt, value, opts)
+    end
   end
 
-  defp validate_option_value(_caller, _, :compute, function) when is_function(function, 1) do
-    :ok
-    # with %{module: module, name: name, arity: arity} <- Function.info(function),
-    #     true <- function_exported?(module, name, arity) do
-    #       :ok
-    #     else
-    #       _ ->
-    #       {:error, "Undefined function #{inspect(function)}"}
-    #     end
+  defp validate_opt(attribute, opt, value, opts)
+
+  defp validate_opt(_, :compute, func, _) when is_function(func, 1), do: nil
+  defp validate_opt(_, :compute, func, _) when is_atom(func), do: nil
+
+  defp validate_opt(_, :compute, func, _) do
+    raise ArgumentError, "Expected a 1-arity function or an atom.  Received #{inspect(func)}"
   end
 
-  defp validate_option_value(_caller, _, :compute, function) when is_atom(function) do
-    :ok
-    # case Module.defines?(caller.module, {function, 1}) do
-    #   true ->
-    #     :ok
+  defp validate_opt(_, :required, value, _) when is_boolean(value), do: nil
 
-    #   false ->
-    #     {:error, "Undefined function.  #{function} should be an atom with the name of a 1-arity function"}
-    # end
+  defp validate_opt(_, :required, value, _) do
+    raise ArgumentError, "Option :required should be a boolean.  Received #{inspect(value)}"
   end
 
-  defp validate_option_value(_, _, :compute, function) do
-    {:error, "Expected a 1-arity function or an atom.  Received #{inspect(function)}"}
+  defp validate_opt(_, :after_connect, value, opts) when is_boolean(value) do
+    if opts[:compute],
+      do: nil,
+      else:
+        raise(
+          ArgumentError,
+          "must pass :compute option to use :after_connect"
+        )
   end
 
-  defp validate_option_value(_, _, :required, value) when is_boolean(value) do
-    :ok
+  defp validate_opt(_, :after_connect, value, _) do
+    raise ArgumentError, ":after_connect must be a boolean.  Received #{inspect(value)}"
   end
 
-  defp validate_option_value(_, _, :required, value) do
-    {:error, "Option :required should be a boolean.  Received #{inspect(value)}"}
-  end
-
-  defp validate_option_value(_, _, _, _) do
-    :ok
-  end
+  defp validate_opt(_, _, _, _), do: nil
 end

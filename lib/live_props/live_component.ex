@@ -58,7 +58,7 @@ defmodule LiveProps.LiveComponent do
   end
 
   def __update__(%{lp_command: :set_state} = assigns, socket, module) do
-    assigns = assigns |> Map.drop([:lp_command])
+    assigns = assigns |> Map.drop([:lp_command, :id])
 
     socket = LiveProps.API.__set_state__(socket, assigns, module)
 
@@ -88,6 +88,7 @@ defmodule LiveProps.LiveComponent do
       |> module.__put_default_states__()
       |> module.__put_computed_states__()
       |> module.__put_async_states__()
+      |> Map.drop([:flash])
 
 
     {:ok, assign(socket, assigns)}

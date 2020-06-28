@@ -58,6 +58,8 @@ defmodule LiveProps.API do
   end
 
   def __set_state__(socket, assigns, module) do
+    assigns = Enum.into(assigns, %{})
+
     valid_states = for s <- module.__states__(:all), do: s.name
     supplied_states = Map.keys(assigns)
 
@@ -80,6 +82,7 @@ defmodule LiveProps.API do
       |> Map.merge(assigns)
       |> module.__put_computed_states__()
       |> module.__put_async_states__()
+      |> Map.drop([:flash])
 
     Phoenix.LiveView.assign(socket, new_assigns)
   end

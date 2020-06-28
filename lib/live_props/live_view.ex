@@ -71,6 +71,7 @@ defmodule LiveProps.LiveView do
       socket.assigns
       |> module.__put_default_states__()
       |> module.__put_computed_states__()
+      |> Map.drop([:flash])
 
     {:ok, assign(socket, assigns)}
   end
@@ -97,6 +98,7 @@ defmodule LiveProps.LiveView do
     assigns =
       socket.assigns
       |> module.__put_async_states__()
+      |> Map.drop([:flash])
 
     {:noreply, assign(socket, assigns)}
   end

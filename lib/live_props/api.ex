@@ -202,10 +202,6 @@ defmodule LiveProps.API do
           &(&1[:after_connect] == true)
         )
       end
-
-      # def set_state(socket, assigns) do
-      #   LiveProps.API.__set_state__(socket, assigns, __MODULE__)
-      # end
     end
   end
 

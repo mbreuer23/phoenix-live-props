@@ -18,8 +18,8 @@ defmodule LiveProps.LiveView do
 
   defp quoted_handle_info(_env) do
     quote do
-      def handle_info(:liveprops_after_connect, socket) do
-        LiveProps.LiveView.__handle_info__(:liveprops_after_connect, socket, __MODULE__)
+      def handle_info({:liveprops, event, args}, socket) do
+        LiveProps.LiveView.__handle_info__({event, args}, socket, __MODULE__)
       end
     end
   end
@@ -65,7 +65,7 @@ defmodule LiveProps.LiveView do
         ) :: {:ok, Phoenix.LiveView.Socket.t()}
 
   def __mount__(_params, _session, socket, module) do
-    if connected?(socket), do: send(self(), :liveprops_after_connect)
+    if connected?(socket), do: send(self(), {:liveprops, :after_connect, []})
 
     assigns =
       socket.assigns
@@ -75,20 +75,25 @@ defmodule LiveProps.LiveView do
     {:ok, assign(socket, assigns)}
   end
 
+
+
+  # @spec __handle_info__(
+  #         event :: atom()
+  #         socket :: Phoenix.LiveView.Socket.t(),
+  #         module :: module()
+  #       ) :: {:noreply, Phoenix.LiveView.Socket.t()}
+
+  def __handle_info__({event, args}, socket, module) do
+    apply(__MODULE__, event, [socket, module] ++ args)
+  end
+
   @doc """
   Assigns any states defined with `after_connect: true` in the given
   module to the socket.
 
   Returns `{:noreply, socket}`
   """
-
-  @spec __handle_info__(
-          :liveprops_after_connect,
-          socket :: Phoenix.LiveView.Socket.t(),
-          module :: module()
-        ) :: {:noreply, Phoenix.LiveView.Socket.t()}
-
-  def __handle_info__(:liveprops_after_connect, socket, module) do
+  def after_connect(socket, module) do
     assigns =
       socket.assigns
       |> module.__put_async_states__()

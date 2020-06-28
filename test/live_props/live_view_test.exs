@@ -18,6 +18,11 @@ defmodule LiveProps.LiveViewTest do
         """
       end
 
+      def mount(_, _, socket) do
+        defaults_available = socket.assigns[:ready]
+        {:ok, assign(socket, :defaults_available, defaults_available)}
+      end
+
       def get_posts(assigns) do
         case assigns.ready do
           true -> [:post1, :post2]
@@ -35,11 +40,16 @@ defmodule LiveProps.LiveViewTest do
 
     test "sends message on connect and asynchronously computes appropriate states" do
       {:ok, socket} = Example.mount(%{}, %{}, %Socket{connected?: true})
-      assert_received :liveprops_after_connect
+      assert_received {:liveprops, :after_connect, []}
       refute socket.assigns[:async_posts] == [:post1, :post2]
 
-      {:noreply, socket} = Example.handle_info(:liveprops_after_connect, socket)
+      {:noreply, socket} = Example.handle_info({:liveprops, :after_connect, []}, socket)
       assert socket.assigns.async_posts == [:post1, :post2]
+    end
+
+    test "respects user-defined mount" do
+      {:ok, socket} = Example.mount(%{}, %{}, %Socket{})
+      assert socket.assigns[:defaults_available] == true
     end
 
     test "does not exposes prop/3" do

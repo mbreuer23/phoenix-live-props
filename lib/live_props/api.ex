@@ -6,7 +6,7 @@ defmodule LiveProps.API do
   defmacro __using__(include: include) do
     imports = %{
       prop: [{:prop, 2}, {:prop, 3}],
-      state: [{:state, 2}, {:state, 3}, {:send_state, 3}]
+      state: [{:state, 2}, {:state, 3}, {:send_state, 3}, {:set_state, 2}]
     }
 
     functions = for func <- include, imp <- imports[func], into: [], do: imp
@@ -47,11 +47,11 @@ defmodule LiveProps.API do
     end
   end
 
-  # defmacro set_state(socket, assigns) do
-  #   quote do
-  #     LiveProps.API.__set_state__(unquote(socket), unquote(assigns), __MODULE__)
-  #   end
-  # end
+  defmacro set_state(socket, assigns) do
+    quote do
+      LiveProps.API.__set_state__(unquote(socket), unquote(assigns), __MODULE__)
+    end
+  end
 
   def send_state(module, id, assigns) do
     Phoenix.LiveView.send_update(module, [lp_command: :set_state, id: id] ++ assigns)
@@ -203,9 +203,9 @@ defmodule LiveProps.API do
         )
       end
 
-      def set_state(socket, assigns) do
-        LiveProps.API.__set_state__(socket, assigns, __MODULE__)
-      end
+      # def set_state(socket, assigns) do
+      #   LiveProps.API.__set_state__(socket, assigns, __MODULE__)
+      # end
     end
   end
 

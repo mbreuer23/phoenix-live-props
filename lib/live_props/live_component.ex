@@ -103,7 +103,7 @@ defmodule LiveProps.LiveComponent do
   end
 
   defp require_props!(assigns, module) do
-    required_keys = for p <- module.__props__(:all), p[:required] == true, do: p.name
+    required_keys = for p <- module.__props__(:required), do: p.name
     provided_keys = Map.keys(assigns)
 
     case required_keys -- provided_keys do

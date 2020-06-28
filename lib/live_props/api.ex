@@ -4,12 +4,12 @@ defmodule LiveProps.API do
   can be used inside Phoenix LiveViews and/or Phoenix LiveComponents
   """
   defmacro __using__(include: include) do
-    arities = %{
-      prop: [2, 3],
-      state: [2, 3]
+    imports = %{
+      prop: [{:prop, 2}, {:prop, 3}],
+      state: [{:state, 2}, {:state, 3}, {:send_state, 3}]
     }
 
-    functions = for func <- include, arity <- arities[func], into: [], do: {func, arity}
+    functions = for func <- include, imp <- imports[func], into: [], do: imp
     attribute_names = for func <- include, into: [], do: prefix(func)
 
     quote do
@@ -45,6 +45,43 @@ defmodule LiveProps.API do
     quote do
       LiveProps.API.__state__(unquote(name), unquote(type), unquote(opts), __MODULE__)
     end
+  end
+
+  # defmacro set_state(socket, assigns) do
+  #   quote do
+  #     LiveProps.API.__set_state__(unquote(socket), unquote(assigns), __MODULE__)
+  #   end
+  # end
+
+  def send_state(module, id, assigns) do
+    Phoenix.LiveView.send_update(module, [lp_command: :set_state, id: id] ++ assigns)
+  end
+
+  def __set_state__(socket, assigns, module) do
+    valid_states = for s <- module.__states__(:all), do: s.name
+    supplied_states = Map.keys(assigns)
+
+    case supplied_states -- valid_states do
+      [] ->
+        :ok
+
+      any ->
+        raise RuntimeError, """
+          Cannot set state(s) #{inspect(any)} because they have not been defined as states
+          in module #{inspect(module)}
+
+          The following states are defined:
+          #{inspect(valid_states)}
+        """
+    end
+
+    new_assigns =
+      socket.assigns
+      |> Map.merge(assigns)
+      |> module.__put_computed_states__()
+      |> module.__put_async_states__()
+
+    Phoenix.LiveView.assign(socket, new_assigns)
   end
 
   def __prop__(name, type, opts, module) do
@@ -164,6 +201,10 @@ defmodule LiveProps.API do
           __states__(:computed),
           &(&1[:after_connect] == true)
         )
+      end
+
+      def set_state(socket, assigns) do
+        LiveProps.API.__set_state__(socket, assigns, __MODULE__)
       end
     end
   end

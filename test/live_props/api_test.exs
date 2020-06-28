@@ -57,12 +57,15 @@ defmodule LiveProps.APITest do
   end
 
   describe "Module ValidStates" do
+    alias Phoenix.LiveView.Socket
+
     defmodule ValidStates do
       use LiveProps.API, include: [:state]
 
       state(:ready, :boolean, default: false)
       state(:count, :integer, compute: :get_count)
       state(:async_count, :integer, compute: :get_count, after_connect: true)
+      state :no_default, :atom
 
       def get_count(_assigns) do
         System.unique_integer()
@@ -74,7 +77,7 @@ defmodule LiveProps.APITest do
       defaults = for s <- ValidStates.__states__(:defaults), do: s.name
       computed = for s <- ValidStates.__states__(:computed), do: s.name
 
-      assert [:ready, :count, :async_count] == states
+      assert [:ready, :count, :async_count, :no_default] == states
       assert [:ready] == defaults
       assert [:count, :async_count] == computed
     end
@@ -95,6 +98,15 @@ defmodule LiveProps.APITest do
     test "puts async states" do
       assigns = ValidStates.__put_async_states__(%{})
       assert is_integer(assigns.async_count)
+    end
+
+    test "can set states" do
+      socket = LiveProps.API.__set_state__(%Socket{}, %{ready: :ready}, ValidStates)
+      assert socket.assigns.ready == :ready
+
+      assert_raise RuntimeError, ~r/Cannot set state/, fn ->
+        LiveProps.API.__set_state__(%Socket{}, %{not_a_state: true}, ValidStates)
+      end
     end
   end
 
@@ -123,6 +135,14 @@ defmodule LiveProps.APITest do
 
       assert_no_compile CompileError, ~r/undefined function/ do
         prop(:test, :map, compute: &undef/1)
+      end
+
+      assert_no_compile ArgumentError, ~r/function or an atom/ do
+        prop :test, :boolean, compute: 1
+      end
+
+      assert_no_compile ArgumentError, ~r/should be a boolean/ do
+        prop :test, :boolean, required: :not_a_boolean
       end
     end
   end

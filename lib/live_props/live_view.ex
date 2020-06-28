@@ -19,7 +19,7 @@ defmodule LiveProps.LiveView do
   defp quoted_handle_info(_env) do
     quote do
       def handle_info(:liveprops_after_connect, socket) do
-        LiveProps.LiveView.handle_info(:liveprops_after_connect, socket, __MODULE__)
+        LiveProps.LiveView.__handle_info__(:liveprops_after_connect, socket, __MODULE__)
       end
     end
   end
@@ -30,7 +30,7 @@ defmodule LiveProps.LiveView do
         defoverridable mount: 3
 
         def mount(params, session, socket) do
-          {:ok, socket} = LiveProps.LiveView.mount(params, session, socket, __MODULE__)
+          {:ok, socket} = LiveProps.LiveView.__mount__(params, session, socket, __MODULE__)
 
           super(params, session, socket)
         end
@@ -38,7 +38,7 @@ defmodule LiveProps.LiveView do
     else
       quote do
         def mount(params, session, socket) do
-          LiveProps.LiveView.mount(params, session, socket, __MODULE__)
+          LiveProps.LiveView.__mount__(params, session, socket, __MODULE__)
         end
       end
     end
@@ -57,14 +57,14 @@ defmodule LiveProps.LiveView do
   will get invoked asynchronously after the socket
   is connected.
   """
-  @spec mount(
+  @spec __mount__(
           Phoenix.LiveView.unsigned_params() | :not_mounted_at_router,
           session :: map(),
           socket :: Phoenix.LiveView.Socket.t(),
           module()
         ) :: {:ok, Phoenix.LiveView.Socket.t()}
 
-  def mount(_params, _session, socket, module) do
+  def __mount__(_params, _session, socket, module) do
     if connected?(socket), do: send(self(), :liveprops_after_connect)
 
     assigns =
@@ -82,13 +82,13 @@ defmodule LiveProps.LiveView do
   Returns `{:noreply, socket}`
   """
 
-  @spec handle_info(
+  @spec __handle_info__(
           :liveprops_after_connect,
           socket :: Phoenix.LiveView.Socket.t(),
           module :: module()
         ) :: {:noreply, Phoenix.LiveView.Socket.t()}
 
-  def handle_info(:liveprops_after_connect, socket, module) do
+  def __handle_info__(:liveprops_after_connect, socket, module) do
     assigns =
       socket.assigns
       |> module.__put_async_states__()

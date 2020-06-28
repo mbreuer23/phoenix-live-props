@@ -66,7 +66,8 @@ defmodule LiveProps.LiveComponent do
   end
 
   def __update__(assigns, socket, module) do
-    # TODO: check for required props using module.__props__(:required)
+    require_props!(assigns, module)
+
     assigns =
       assigns
       |> drop_states(module)
@@ -99,5 +100,23 @@ defmodule LiveProps.LiveComponent do
   defp drop_states(assigns, module) do
     states = for s <- module.__states__(:all), do: s.name
     Map.drop(assigns, states)
+  end
+
+  defp require_props!(assigns, module) do
+    required_keys = for p <- module.__props__(:all), p[:required] == true, do: p.name
+    provided_keys = Map.keys(assigns)
+
+    case required_keys -- provided_keys do
+      [] ->
+        :ok
+
+      missing ->
+        raise RuntimeError, """
+        Missing required props:
+        #{inspect(missing)}
+
+        Recieved: #{inspect(assigns)}
+        """
+    end
   end
 end

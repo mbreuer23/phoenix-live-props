@@ -8,7 +8,7 @@ defmodule LiveProps.LiveComponentTest do
       use LiveProps.LiveComponent
 
       prop :id, :atom
-      prop :authenticated, :boolean, default: false
+      prop :authenticated, :boolean, default: false, required: true
       prop :count, :integer, compute: :get_count
 
       state :ready, :boolean, default: false
@@ -67,6 +67,12 @@ defmodule LiveProps.LiveComponentTest do
 
       # respects custom update
       assert socket.assigns.custom_update == true
+    end
+
+    test "raises on missing required props" do
+      assert_raise RuntimeError, ~r/Missing required props/, fn ->
+        Component.update(%{}, %Socket{})
+      end
     end
 
     test "allows state to be passed in with :lp_command" do

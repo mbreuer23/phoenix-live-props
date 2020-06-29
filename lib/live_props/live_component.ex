@@ -61,23 +61,21 @@ defmodule LiveProps.LiveComponent do
   end
 
   def __update__(%{lp_command: :set_state} = assigns, socket, module) do
-    assigns = assigns |> Map.drop([:lp_command, :id])
+    new_assigns = Map.drop(assigns, [:lp_command, :id])
 
-    socket = LiveProps.API.__set_state__(socket, assigns, module)
-
-    {:ok, socket}
+    {:ok,
+      socket
+      |> LiveProps.API.__set_state__(new_assigns, module)}
   end
 
   def __update__(assigns, socket, module) do
     require_props!(assigns, module)
 
-    socket =
+    {:ok,
       socket
       |> assign(drop_states(assigns, module))
       |> API.__assign_props__(:defaults, module)
-      |> API.__assign_props__(:computed, module)
-
-    {:ok, socket}
+      |> API.__assign_props__(:computed, module)}
   end
 
   def __mount__(socket, module) do

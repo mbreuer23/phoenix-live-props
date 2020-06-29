@@ -132,7 +132,7 @@ defmodule LiveProps.API do
   defp assign(socket, attribute, value_key, call_functions?, force?) do
     value =
       if is_function(attribute[value_key]) && call_functions? do
-        attribute[value_key].(socket.assigns)
+        attribute[value_key].(socket)
       else
         attribute[value_key]
       end

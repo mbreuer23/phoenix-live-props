@@ -15,7 +15,7 @@ defmodule LiveProps.APITest do
       prop(:user_name_2, :string, compute: &ValidProps.get_user_name/1)
       # prop(:identity, :integer, compute: fn _ -> 1 end)
 
-      def get_user_name(assigns) do
+      def get_user_name(%{assigns: assigns}) do
         "user-#{assigns.user.id}"
       end
     end
@@ -44,7 +44,7 @@ defmodule LiveProps.APITest do
       state(:async_count, :integer, compute: :get_count, after_connect: true)
       state :no_default, :atom
 
-      def get_count(_assigns) do
+      def get_count(_socket) do
         System.unique_integer()
       end
     end

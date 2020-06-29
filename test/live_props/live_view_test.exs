@@ -23,7 +23,7 @@ defmodule LiveProps.LiveViewTest do
         {:ok, assign(socket, :defaults_available, defaults_available)}
       end
 
-      def get_posts(assigns) do
+      def get_posts(%{assigns: assigns}) do
         case assigns.ready do
           true -> [:post1, :post2]
           false -> []

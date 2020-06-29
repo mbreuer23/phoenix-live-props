@@ -22,14 +22,16 @@ defmodule LiveProps do
   In side a LiveView or LiveComponent, you must `use` `LiveProps.LiveView` or `LiveProps.LiveComponent`,
   respectively.
 
-      defmodule MyAppWeb.ThermostatLive do
+      defmodule MyAppWeb.ThermostatComponent do
         # If you generated an app with mix phx.new --live,
-        # the line below would be: use MyAppWeb, :live_view
-        use Phoenix.LiveView
-        use LiveProps.LiveView
+        # the line below would be: use MyAppWeb, :live_component
+        use Phoenix.LiveComponent
+        use LiveProps.LiveComponent
 
-        state :temperature, :float
-        state :user_id, :integer
+        prop :user_id, :integer, required: true
+        prop :temperature, :float, compute: :get_temperature
+
+        state :scale, :atom, default: :fahrenheit
 
         def render(assigns) do
           ~L"""
@@ -37,9 +39,20 @@ defmodule LiveProps do
           """
         end
 
-        def mount(_params, %{"current_user_id" => user_id}, socket) do
-          temperature = Thermostat.get_user_reading(user_id)
-          {:ok, assign(socket, :temperature, temperature)}
+        def get_temperature(assigns) do
+          Thermostat.get_user_reading(assigns.user_id, assigns.scale)
+        end
+
+        def handle_event("toggle-scale", _, socket) do
+            new_scale =
+              if socket.assigns.scale == :fahrenheit,
+                do: :celsius,
+                else: :fahrenheit
+
+            {:noreply,
+              socket
+              |> assign(:scale, new_scale)
+              |> }
         end
       end
 

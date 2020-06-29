@@ -65,7 +65,7 @@ defmodule LiveProps.IntegrationTest.LiveView do
       {:noreply, set_state(socket, %{comments: [1, 2, 3, 4]})}
     end
 
-    def get_count(assigns) do
+    def get_count(%{assigns: assigns}) do
       length(assigns[:comments])
     end
   end

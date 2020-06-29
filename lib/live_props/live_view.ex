@@ -1,8 +1,32 @@
 defmodule LiveProps.LiveView do
-  @moduledoc """
+  @moduledoc ~S'''
   Use this module inside a Phoenix.LiveView to add state management functionality to your
-  liveviews
-  """
+  LiveViews
+
+  ### LiveView Lifecycle with LiveProps
+
+  LiveProps injects lightweight `c:Phoenix.LiveView.mount/3` and
+  `c:Phoenix.LiveView.handle_info/2` callbacks to help manage state.
+
+  The lifecycle of the injected mount statement looks like this:
+
+      assign_default_states(socket) ->
+      user_defined_mount(socket) -> # if any
+      assign_computed_states(socket)
+
+  This reason we assign computed states last is because they may depend on data from params
+  or session.  LiveProps does not handle params and session so you will need to manually
+  assign them in your own mount callback, if needed.
+
+  ### Example
+
+        defmodule ThermostatLive do
+          # If you generated an app with mix phx.new --live,
+          # the line below would be: use MyAppWeb, :live_view
+          use Phoenix.LiveView
+          use LiveProps.LiveView
+
+  '''
   import Phoenix.LiveView
 
   defmacro __using__(_) do

@@ -92,13 +92,15 @@ defmodule LiveProps do
   you define will be run **after** the the LiveProps callbacks (i.e. defaults and computed values
   will already be assigned to the socket)
 
-  Please see docs for `LiveProps.LiveView` and `LiveProps.LiveComponent` for additional information.
+  This module is not intended to be used directly but rather by means of
+  `LiveProps.LiveView` and `LiveProps.LiveComponent`.  Please see docs for those
+  modules for additional information.
   '''
 
   defmacro __using__(include: include) do
     imports = %{
       prop: [{:prop, 2}, {:prop, 3}],
-      state: [{:state, 2}, {:state, 3}, {:send_state, 3}, {:set_state, 2}]
+      state: [{:state, 2}, {:state, 3}, {:send_state, 3}, {:set_state, 2}, {:set_state, 3}]
     }
 
     functions = for func <- include, imp <- imports[func], into: [], do: imp
@@ -143,6 +145,12 @@ defmodule LiveProps do
   defmacro set_state(socket, assigns) do
     quote do
       LiveProps.__set_state__(unquote(socket), unquote(assigns), __MODULE__)
+    end
+  end
+
+  defmacro set_state(socket, key, value) do
+    quote do
+      LiveProps.__set_state__(unquote(socket), %{unquote(key) => unquote(value)}, __MODULE__)
     end
   end
 

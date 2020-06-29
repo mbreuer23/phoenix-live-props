@@ -28,7 +28,7 @@ defmodule LiveProps.IntegrationTest.LiveView do
     end
 
     def handle_event("toggle", _, socket) do
-      {:noreply, Phoenix.LiveView.assign(socket, :show_comments, !socket.assigns.show_comments)}
+      {:noreply, set_state(socket, :show_comments, !socket.assigns.show_comments)}
     end
 
     def handle_event("update", _, socket) do

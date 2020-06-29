@@ -1,8 +1,5 @@
 defmodule LiveProps.Factory do
-  @moduledoc """
-  Functions to validate and build representations of props and state.
-
-  """
+  @moduledoc false
   alias LiveProps.Validations
 
   @spec build_attribute!(
@@ -13,11 +10,7 @@ defmodule LiveProps.Factory do
           opts :: list()
         ) :: map()
 
-  @doc """
-  Validates and builds a prop or state definition.
-
-  Returns a map.  Raises on validation errors.
-  """
+  @doc false
   def build_attribute!(attribute, name, type, opts, module) do
     Validations.validate_opts!(attribute, name, type, opts)
 

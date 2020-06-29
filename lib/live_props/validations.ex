@@ -1,11 +1,8 @@
 defmodule LiveProps.Validations do
-  @moduledoc """
-  Functions to validate options when defining props or state.
-
-  Will raise in case of problems
-  """
+  @moduledoc false
   @valid_attributes [:prop, :state]
 
+  @doc false
   def validate_opts!(attribute, name, type, opts) do
     if Keyword.keyword?(opts) == false do
       raise ArgumentError, "Options should be a keyword list.  Received #{inspect(opts)}"

@@ -23,6 +23,7 @@ defmodule LiveProps.API do
   end
 
   defmacro __before_compile__(env) do
+    LiveProps.API.Docs.generate_docs(env)
     [
       quoted_prop_api(env),
       quoted_state_api(env)
@@ -208,7 +209,7 @@ defmodule LiveProps.API do
     end
   end
 
-  defp prefix(atom) when is_atom(atom) do
+  def prefix(atom) when is_atom(atom) do
     ("liveprop_" <> Atom.to_string(atom))
     |> String.to_atom()
   end

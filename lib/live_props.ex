@@ -91,5 +91,7 @@ defmodule LiveProps do
   and everything will continue to work.  In a LiveComponent, any mount or update callbacks
   you define will be run **after** the the LiveProps callbacks (i.e. defaults and computed values
   will already be assigned to the socket)
+
+  Please see docs for `LiveProps.LiveView` and `LiveProps.LiveComponent` for additional information.
   '''
 end

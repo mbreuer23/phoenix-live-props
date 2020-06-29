@@ -6,7 +6,7 @@ defmodule LiveProps do
   ### Features
 
     * Declaratively define props and state, initialize default values, and compute derived values
-    using the `LiveProps.API.prop/3` and `LiveProps.API.state/3` macros.
+    using the `LiveProps.prop/3` and `LiveProps.state/3` macros.
 
     * Supports required props
 

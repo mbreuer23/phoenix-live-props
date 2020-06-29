@@ -1,4 +1,7 @@
 defmodule LiveProps.LiveView do
+  @moduledoc """
+  Functions for managing state within Phoenix LiveViews.
+  """
   import Phoenix.LiveView
 
   alias LiveProps.API
@@ -76,12 +79,13 @@ defmodule LiveProps.LiveView do
     apply(__MODULE__, event, [socket, module] ++ args)
   end
 
-  @doc """
-  Assigns any states defined with `after_connect: true` in the given
-  module to the socket.
+  # @doc """
+  # Assigns any states defined with `after_connect: true` in the given
+  # module to the socket.
 
-  Returns `{:noreply, socket}`
-  """
+  # Returns `{:noreply, socket}`
+  # """
+  @doc false
   def after_connect(socket, module) do
     {:noreply,
       socket

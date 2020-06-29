@@ -1,6 +1,8 @@
 defmodule LiveProps.LiveView do
   import Phoenix.LiveView
 
+  alias LiveProps.API
+
   defmacro __using__(_) do
     quote do
       use LiveProps.API, include: [:state]
@@ -57,32 +59,16 @@ defmodule LiveProps.LiveView do
   will get invoked asynchronously after the socket
   is connected.
   """
-  @spec __mount__(
-          Phoenix.LiveView.unsigned_params() | :not_mounted_at_router,
-          session :: map(),
-          socket :: Phoenix.LiveView.Socket.t(),
-          module()
-        ) :: {:ok, Phoenix.LiveView.Socket.t()}
-
   def __mount__(_params, _session, socket, module) do
     if connected?(socket), do: send(self(), {:liveprops, :after_connect, []})
 
-    assigns =
-      socket.assigns
-      |> module.__put_default_states__()
-      |> module.__put_computed_states__()
-      |> Map.drop([:flash])
+    socket =
+      socket
+      |> API.__assign_states__(:defaults, module)
+      |> API.__assign_states__(:computed, module)
 
-    {:ok, assign(socket, assigns)}
+    {:ok, socket}
   end
-
-
-
-  # @spec __handle_info__(
-  #         event :: atom()
-  #         socket :: Phoenix.LiveView.Socket.t(),
-  #         module :: module()
-  #       ) :: {:noreply, Phoenix.LiveView.Socket.t()}
 
   def __handle_info__({event, args}, socket, module) do
     apply(__MODULE__, event, [socket, module] ++ args)
@@ -95,11 +81,10 @@ defmodule LiveProps.LiveView do
   Returns `{:noreply, socket}`
   """
   def after_connect(socket, module) do
-    assigns =
-      socket.assigns
-      |> module.__put_async_states__()
-      |> Map.drop([:flash])
+    socket =
+      socket
+      |> API.__assign_states__(:async, module)
 
-    {:noreply, assign(socket, assigns)}
+    {:noreply, socket}
   end
 end

@@ -32,28 +32,28 @@ defmodule LiveProps.APITest do
       assert [:user_name, :user_name_2] == computed
     end
 
-    test "puts default props correctly" do
-      # assign doesnt exist
-      assigns = ValidProps.__put_default_props__(%{})
+    # test "puts default props correctly" do
+    #   # assign doesnt exist
+    #   assigns = ValidProps.__put_default_props__(%{})
 
-      assert %{
-               user: %{id: 1}
-             } = assigns
+    #   assert %{
+    #            user: %{id: 1}
+    #          } = assigns
 
-      # assign already exists
-      assigns = ValidProps.__put_default_props__(%{user: %{id: 3}})
+    #   # assign already exists
+    #   assigns = ValidProps.__put_default_props__(%{user: %{id: 3}})
 
-      assert %{
-               user: %{id: 3}
-             } = assigns
-    end
+    #   assert %{
+    #            user: %{id: 3}
+    #          } = assigns
+    # end
 
-    test "computes props" do
-      assigns = %{user: %{id: 1}}
-      assigns = ValidProps.__put_computed_props__(assigns)
-      assert assigns.user_name == "user-1"
-      assert assigns.user_name_2 == "user-1"
-    end
+    # test "computes props" do
+    #   assigns = %{user: %{id: 1}}
+    #   assigns = ValidProps.__put_computed_props__(assigns)
+    #   assert assigns.user_name == "user-1"
+    #   assert assigns.user_name_2 == "user-1"
+    # end
   end
 
   describe "Module ValidStates" do
@@ -76,29 +76,31 @@ defmodule LiveProps.APITest do
       states = for s <- ValidStates.__states__(:all), do: s.name
       defaults = for s <- ValidStates.__states__(:defaults), do: s.name
       computed = for s <- ValidStates.__states__(:computed), do: s.name
+      async = for s <- ValidStates.__states__(:async), do: s.name
 
       assert [:ready, :count, :async_count, :no_default] == states
       assert [:ready] == defaults
-      assert [:count, :async_count] == computed
+      assert [:count] == computed
+      assert [:async_count] = async
     end
 
-    test "puts default states" do
-      assigns = ValidStates.__put_default_states__(%{})
-      assert assigns.ready == false
-      refute Map.has_key?(assigns, :count)
-      refute Map.has_key?(assigns, :async_count)
-    end
+    # test "puts default states" do
+    #   assigns = ValidStates.__put_default_states__(%{})
+    #   assert assigns.ready == false
+    #   refute Map.has_key?(assigns, :count)
+    #   refute Map.has_key?(assigns, :async_count)
+    # end
 
-    test "puts computed states" do
-      assigns = ValidStates.__put_computed_states__(%{})
-      assert is_integer(assigns.count)
-      refute Map.has_key?(assigns, :async_count)
-    end
+    # test "puts computed states" do
+    #   assigns = ValidStates.__put_computed_states__(%{})
+    #   assert is_integer(assigns.count)
+    #   refute Map.has_key?(assigns, :async_count)
+    # end
 
-    test "puts async states" do
-      assigns = ValidStates.__put_async_states__(%{})
-      assert is_integer(assigns.async_count)
-    end
+    # test "puts async states" do
+    #   assigns = ValidStates.__put_async_states__(%{})
+    #   assert is_integer(assigns.async_count)
+    # end
 
     test "can set states" do
       socket = LiveProps.API.__set_state__(%Socket{}, %{ready: :ready}, ValidStates)

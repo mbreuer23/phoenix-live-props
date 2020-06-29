@@ -1,5 +1,8 @@
 defmodule LiveProps.LiveComponent do
   import Phoenix.LiveView
+
+  alias LiveProps.API
+
   defmacro __using__(_) do
     quote do
       use LiveProps.API, include: [:state, :prop]
@@ -68,13 +71,13 @@ defmodule LiveProps.LiveComponent do
   def __update__(assigns, socket, module) do
     require_props!(assigns, module)
 
-    assigns =
-      assigns
-      |> drop_states(module)
-      |> module.__put_default_props__()
-      |> module.__put_computed_props__()
+    socket =
+      socket
+      |> assign(drop_states(assigns, module))
+      |> API.__assign_props__(:defaults, module)
+      |> API.__assign_props__(:computed, module)
 
-    {:ok, assign(socket, assigns)}
+    {:ok, socket}
   end
 
   def __mount__(socket, module) do
@@ -82,21 +85,12 @@ defmodule LiveProps.LiveComponent do
     # differently in a live component, where socket should already be connected.
     # Should be warn the user if they try to user :after_connect option
     # in a component?
-
-    assigns =
-      socket.assigns
-      |> module.__put_default_states__()
-      |> module.__put_computed_states__()
-      |> module.__put_async_states__()
-      |> Map.drop([:flash])
-
-
-    {:ok, assign(socket, assigns)}
+    {:ok,
+      socket
+      |> API.__assign_states__(:defaults, module)
+      |> API.__assign_states__(:computed, module)
+      |> API.__assign_states__(:async, module)}
   end
-
-  # def send_state(module, id, assigns) do
-  #   send self(), {:liveprops, :send_state, [module, id, assigns]}
-  # end
 
   defp drop_states(assigns, module) do
     states = for s <- module.__states__(:all), do: s.name

@@ -78,14 +78,10 @@ defmodule LiveProps.API do
         """
     end
 
-    new_assigns =
-      socket.assigns
-      |> Map.merge(assigns)
-      |> module.__put_computed_states__()
-      |> module.__put_async_states__()
-      |> Map.drop([:flash])
-
-    Phoenix.LiveView.assign(socket, new_assigns)
+    socket
+    |> Phoenix.LiveView.assign(assigns)
+    |> __assign_states__(:computed, module)
+    |> __assign_states__(:async, module)
   end
 
   def __prop__(name, type, opts, module) do
@@ -96,46 +92,63 @@ defmodule LiveProps.API do
     define(:state, name, type, opts, module)
   end
 
-  def __put_default_props__(assigns, props) do
-    props
-    |> Stream.filter(&(&1.has_default == true))
-    |> Enum.reduce(assigns, fn prop, assigns ->
-      Map.put_new_lazy(assigns, prop.name, fn -> prop.default end)
-    end)
-  end
-
-  def __put_computed_props__(assigns, props) do
-    props
-    |> Stream.filter(&(&1.is_computed == true))
-    |> Enum.reduce(assigns, fn prop, assigns ->
-      Map.put(assigns, prop.name, prop.compute.(assigns))
-    end)
-  end
-
-  def __put_default_states__(assigns, states) do
+  def __assign_default_states__(socket, states) do
     states
     |> Stream.filter(&(&1.has_default == true))
-    |> Enum.reduce(assigns, fn state, assigns ->
-      Map.put(assigns, state.name, state.default)
+    |> Enum.reduce(socket, fn state, socket ->
+      Phoenix.LiveView.assign(socket, state.name, state.default)
     end)
   end
 
-  def __put_computed_states__(assigns, states, filter \\ nil) do
-    states =
-      case is_function(filter) do
-        true ->
-          states
-          |> Stream.filter(&(&1.is_computed == true))
-          |> Stream.filter(filter)
+  defmacro assign_states(socket, kind) do
+    quote bind_quoted: [socket: socket, kind: kind] do
+      LiveProps.API.__assigns_states__(socket, kind, __MODULE__)
+    end
+  end
 
-        false ->
-          states
-          |> Stream.filter(&(&1.is_computed == true))
-      end
+  defp get_assigns_value_key(:computed), do: :compute
+  defp get_assigns_value_key(:async), do: :compute
+  defp get_assigns_value_key(:defaults), do: :default
 
-    Enum.reduce(states, assigns, fn state, assigns ->
-      Map.put(assigns, state.name, state.compute.(assigns))
+  defp should_call_functions?(kind) when kind in [:computed, :async], do: true
+  defp should_call_functions?(_), do: false
+
+  defp should_force?(:computed), do: true
+  defp should_force?(_), do: false
+
+  def __assign_props__(socket, kind, module) do
+    value_key = get_assigns_value_key(kind)
+    call_functions? = should_call_functions?(kind)
+    props = module.__props__(kind)
+    force? = should_force?(kind)
+
+    Enum.reduce(props, socket, fn prop, socket ->
+      assign(socket, prop, value_key, call_functions?, force?)
     end)
+  end
+
+  def __assign_states__(socket, kind, module) do
+    value_key = get_assigns_value_key(kind)
+    call_functions? = should_call_functions?(kind)
+    states = module.__states__(kind)
+
+    Enum.reduce(states, socket, fn state, socket ->
+      assign(socket, state, value_key, call_functions?, true)
+    end)
+  end
+
+  defp assign(socket, attribute, value_key, call_functions?, force?) do
+    value =
+      if is_function(attribute[value_key]) && call_functions? do
+        attribute[value_key].(socket.assigns)
+      else
+        attribute[value_key]
+      end
+    case force? do
+      true -> Phoenix.LiveView.assign(socket, attribute.name, value)
+      false -> Phoenix.LiveView.assign_new(socket, attribute.name, fn -> value end)
+    end
+
   end
 
   defp define(attribute, name, type, opts, module) do
@@ -166,46 +179,20 @@ defmodule LiveProps.API do
       def __props__(:defaults), do: unquote(Macro.escape(default_props))
       def __props__(:computed), do: unquote(Macro.escape(computed_props))
       def __props__(:required), do: unquote(Macro.escape(required_props))
-
-      def __put_default_props__(assigns) do
-        LiveProps.API.__put_default_props__(assigns, __props__(:defaults))
-      end
-
-      def __put_computed_props__(assigns) do
-        LiveProps.API.__put_computed_props__(assigns, __props__(:computed))
-      end
     end
   end
 
   defp quoted_state_api(env) do
     states = Module.get_attribute(env.module, prefix(:state), []) |> Enum.reverse()
     default_states = for s <- states, s[:has_default] == true, do: s
-    computed_states = for s <- states, s[:is_computed] == true, do: s
+    computed_states = for s <- states, s[:is_computed] == true && s[:after_connect] !=true, do: s
+    async_states = for s <- states, s[:is_computed] == true && s[:after_connect] == true, do: s
 
     quote do
       def __states__(:all), do: unquote(Macro.escape(states))
       def __states__(:defaults), do: unquote(Macro.escape(default_states))
       def __states__(:computed), do: unquote(Macro.escape(computed_states))
-
-      def __put_default_states__(assigns) do
-        LiveProps.API.__put_default_states__(assigns, __states__(:defaults))
-      end
-
-      def __put_computed_states__(assigns) do
-        LiveProps.API.__put_computed_states__(
-          assigns,
-          __states__(:computed),
-          &(&1[:after_connect] != true)
-        )
-      end
-
-      def __put_async_states__(assigns) do
-        LiveProps.API.__put_computed_states__(
-          assigns,
-          __states__(:computed),
-          &(&1[:after_connect] == true)
-        )
-      end
+      def __states__(:async), do: unquote(Macro.escape(async_states))
     end
   end
 

@@ -32,9 +32,13 @@ defmodule LiveProps.LiveView do
         defoverridable mount: 3
 
         def mount(params, session, socket) do
-          {:ok, socket} = LiveProps.LiveView.__mount__(params, session, socket, __MODULE__)
+          if connected?(socket), do: send(self(), {:liveprops, :after_connect, []})
+          socket = LiveProps.API.__assign_states__(socket, :defaults, __MODULE__)
+          {:ok, socket} = super(params, session, socket)
+          socket = LiveProps.API.__assign_states__(socket, :computed, __MODULE__)
 
-          super(params, session, socket)
+          {:ok, socket}
+          # LiveProps.LiveView.__mount__(params, session, socket, __MODULE__)
         end
       end
     else

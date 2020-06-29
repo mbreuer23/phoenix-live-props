@@ -19,8 +19,9 @@ defmodule LiveProps do
 
   ### Example
 
-  In side a LiveView or LiveComponent, you must `use` `LiveProps.LiveView` or `LiveProps.LiveComponent`,
-  respectively.
+  Inside a LiveView or LiveComponent, you must use `LiveProps.LiveView` or `LiveProps.LiveComponent`,
+  respectively.  LiveComponents can have state and props, while a LiveView can only have state,
+  so we'll look at an example LiveComponent to demonstrate both.
 
       defmodule MyAppWeb.ThermostatComponent do
         # If you generated an app with mix phx.new --live,
@@ -31,104 +32,64 @@ defmodule LiveProps do
         prop :user_id, :integer, required: true
         prop :temperature, :float, compute: :get_temperature
 
-        state :scale, :atom, default: :fahrenheit
+        state :mode, :atom, default: :verbose
 
         def render(assigns) do
           ~L"""
-          Current temperature: <%= @temperature %>
+          <%= case @mode  do %>
+            <% :verbose -> %>
+              Current temperature: <%= @temperature %>
+
+            <% _ -> %>
+              <%= @temperature %>
+          <% end %>
+          <button phx-click="toggle-mode" phx-target="<%= @myself %>">Toggle mode</button>
           """
         end
 
-        def get_temperature(assigns) do
-          Thermostat.get_user_reading(assigns.user_id, assigns.scale)
+        def get_temperature(%{assigns: assigns} = _socket) do
+          Thermostat.get_user_reading(assigns.user_id)
         end
 
-        def handle_event("toggle-scale", _, socket) do
-            new_scale =
-              if socket.assigns.scale == :fahrenheit,
-                do: :celsius,
-                else: :fahrenheit
+        def handle_event("toggle-mode", _, socket) do
+          new_mode =
+            if socket.assigns.mode == :verbose,
+              do: :compact,
+              else: :verbose
 
-            {:noreply,
-              socket
-              |> assign(:scale, new_scale)
-              |> }
+          {:noreply, assign(socket, :mode, new_mode)}
         end
       end
 
-  Admittedly, we have not done much here.  We've just declared two states and their types,
-  `:temperature` and `:user_id` using the `LiveProps.API.state/3` macro, but we've assigned
-  their values in the usual way.  Still, depending on your preferences, you might like having
-  a list of all known states at the top of your component.  Note that the type can be any atom.
+  Our component requires a `:user_id` prop, which it uses to fetch the temperature.
+  Since it is required, an error will be raised if you forget to pass it in.
 
-  Let's look at another example.
+  We also have the `:temperature` prop, which is a computed prop.  This will be re-calculated
+  automatically anytime the :user_id prop changes.  It is calculated by `get_temperature/1` which
+  takes the socket as an argument and returns the value to be assigned.  Calculations are run
+  in the order defined so we could add even more computed props which depend on the temperature assign.
 
-        defmodule MyAppWeb.ThermostatLive do
-          use Phoenix.LiveView
+  Lastly, the component has a state called `:mode` which controls the display.  We've given
+  it a default value, which is assigned on mount.  We could also add computed states
+  which depends on other states.
 
-          def render(assigns) do
-            ~L"""
-            Current temperature: <%= @temperature %>, checked at: <%= inspect(@checked_at) %>
-            <button phx-click="refresh">Refresh</button>
-            """
-          end
+  Notice what our component does not have: a `c:Phoenix.LiveComponent.mount/1` or `c:Phoenix.LiveComponent.update/2`
+  callback.  LiveProps handles that for you, by injecting lightweight mount/1 and update/2 callbacks under the hood.
+  In pseudocode, these callbacks look like the following:
 
-          def mount(_params, %{"current_user_id" => user_id}, socket) do
-            {:ok,
-              socket
-              |> assign(:user_id, user_id)
-              |> assign_temperature_data()}
-          end
+      def mount(socket) do
+        {:ok, assign_default_states(socket)}
+      end
 
-          def handle_event("refresh", _, socket) do
-            {:noreply, assign_temperature_data(socket)}
-          end
+      def update(assigns, socket) do
+        raise_if_missing_required_props!(assigns)
 
-          defp assign_temperature_data(socket) do
-            socket
-            |> assign(:temperature, Thermostat.get_user_reading(socket.assigns.user_id))
-            |> assign(:checked_at, Date.utc_now())}
-          end
-        end
+        {:ok, assign_props_and_computed_props(socket)}
+      end
 
-  In this example we've added a `:checked_at` assign to show when the temperature we last refreshed
-  and created a button to allow the user to manually refresh.  Finally, we've created a helper function
-  to handle getting the temperature/time data.
-
-        defmodule MyAppWeb.ThermostatLive do
-          use Phoenix.LiveView
-          use LiveProps.LiveView
-
-          state :user_id, :integer
-          state :temperature, :float, compute: :get_temp
-          state :temperature_checked_at, :time, compute: :get_time
-
-          def render(assigns) do
-            ~L"""
-            Current temperature: <%= @temperature %>, checked at: <%= inspect(@temperature_checked_at) %>
-            <button phx-click="refresh">Refresh</button>
-            """
-          end
-
-          def mount(_params, %{"current_user_id" => user_id}, socket) do
-            {:ok, assign(socket, :user_id, user_id)}
-          end
-
-          def handle_event("refresh", _, socket) do
-            {:ok, refresh_state(socket)}
-          end
-
-          def get_temperature(assigns) do
-            Thermostat.get_user_reading(assigns.user_id)
-          end
-
-          def get_time(_assigns) do
-            DateTime.utc_now()
-          end
-
-        end
-
-
-
+  While LiveProps defines `mount` and `update` callbacks for you.  You can still define your own
+  and everything will continue to work.  In a LiveComponent, any mount or update callbacks
+  you define will be run **after** the the LiveProps callbacks (i.e. defaults and computed values
+  will already be assigned to the socket)
   '''
 end

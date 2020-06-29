@@ -92,14 +92,6 @@ defmodule LiveProps.API do
     define(:state, name, type, opts, module)
   end
 
-  def __assign_default_states__(socket, states) do
-    states
-    |> Stream.filter(&(&1.has_default == true))
-    |> Enum.reduce(socket, fn state, socket ->
-      Phoenix.LiveView.assign(socket, state.name, state.default)
-    end)
-  end
-
   defmacro assign_states(socket, kind) do
     quote bind_quoted: [socket: socket, kind: kind] do
       LiveProps.API.__assigns_states__(socket, kind, __MODULE__)

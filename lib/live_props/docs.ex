@@ -17,7 +17,7 @@ defmodule LiveProps.API.Docs do
   end
 
   defp get_opts(prop) do
-    Map.drop(prop, [:name, :type, :module, :is_computed, :has_default])
+    Map.take(prop, [:default, :required, :compute])
     |> Enum.into([])
   end
 
@@ -34,19 +34,18 @@ defmodule LiveProps.API.Docs do
     ", #{format_opts(get_opts(prop))}"
   end
 
-  defp generate_props_docs(module) do
+  defp proplist(props, heading) do
     docs =
-      for prop <- Module.get_attribute(module, LiveProps.API.prefix(:prop), []) do
+      for prop <- props do
         doc = doc_string(prop)
         opts = opts_string(prop)
         "* **#{prop.name}** *#{inspect(prop.type)}#{opts}*#{doc}"
       end
-      |> Enum.reverse()
       |> Enum.join("\n")
 
     if String.length(docs) > 0 do
       """
-      ### Properties
+      ### #{heading}
       #{docs}
       """
     else
@@ -54,10 +53,23 @@ defmodule LiveProps.API.Docs do
     end
   end
 
+  defp generate_props_docs(module) do
+   props = Module.get_attribute(module, LiveProps.API.prefix(:prop), [])
+   noncomputed_props = for p <- props, p[:is_computed] != true, do: p
+   computed_props = props -- noncomputed_props
+
+   proplist(noncomputed_props, "Properties") <> proplist(computed_props, "Computed properties")
+  end
+
   defp format_opts(opts_ast) do
     opts_ast
     |> Macro.to_string()
     |> String.slice(1..-2)
+    # |> backtick_functions()
   end
+
+  # defp backtick_functions(string) do
+  #   Regex.replace(~r/&(.*)\/{}/, string, replacement, options \\ [])/
+  # end
 
 end

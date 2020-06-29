@@ -20,12 +20,14 @@ defmodule LiveProps.DocsTest do
     Example docs
     """
     prop :prop1, :boolean, default: true
-    prop :name, :true, doc: "The name of the user"
+    prop :name, :true, compute: :get_name, doc: "The name of the user"
 
     def render(assigns) do
       ~L"""
       """
     end
+
+    def get_name(_), do: "name"
   end
 
   test "generates docs" do

@@ -1,6 +1,6 @@
 # LiveProps
 
-**TODO: Add description**
+Add props and states to Phoenix LiveViews and LiveComponents
 
 ## Installation
 

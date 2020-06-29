@@ -1,4 +1,4 @@
-defmodule LiveProps.API.Docs do
+defmodule LiveProps.Docs do
   @moduledoc false
 
   def generate_docs(env) do
@@ -54,7 +54,7 @@ defmodule LiveProps.API.Docs do
   end
 
   defp generate_props_docs(module) do
-   props = Module.get_attribute(module, LiveProps.API.prefix(:prop), [])
+   props = Module.get_attribute(module, LiveProps.prefix(:prop), [])
    noncomputed_props = for p <- props, p[:is_computed] != true, do: p
    computed_props = props -- noncomputed_props
 

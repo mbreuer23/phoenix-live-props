@@ -1,11 +1,9 @@
 defmodule LiveProps.LiveComponent do
   import Phoenix.LiveView
 
-  alias LiveProps.API
-
   defmacro __using__(_) do
     quote do
-      use LiveProps.API, include: [:state, :prop]
+      use LiveProps, include: [:state, :prop]
 
       @before_compile unquote(__MODULE__)
     end
@@ -65,7 +63,7 @@ defmodule LiveProps.LiveComponent do
 
     {:ok,
       socket
-      |> LiveProps.API.__set_state__(new_assigns, module)}
+      |> LiveProps.__set_state__(new_assigns, module)}
   end
 
   def __update__(assigns, socket, module) do
@@ -74,8 +72,8 @@ defmodule LiveProps.LiveComponent do
     {:ok,
       socket
       |> assign(drop_states(assigns, module))
-      |> API.__assign_props__(:defaults, module)
-      |> API.__assign_props__(:computed, module)}
+      |> LiveProps.__assign_props__(:defaults, module)
+      |> LiveProps.__assign_props__(:computed, module)}
   end
 
   def __mount__(socket, module) do
@@ -85,9 +83,9 @@ defmodule LiveProps.LiveComponent do
     # in a component?
     {:ok,
       socket
-      |> API.__assign_states__(:defaults, module)
-      |> API.__assign_states__(:computed, module)
-      |> API.__assign_states__(:async, module)}
+      |> LiveProps.__assign_states__(:defaults, module)
+      |> LiveProps.__assign_states__(:computed, module)
+      |> LiveProps.__assign_states__(:async, module)}
   end
 
   defp drop_states(assigns, module) do

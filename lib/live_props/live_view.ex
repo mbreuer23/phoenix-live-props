@@ -1,14 +1,13 @@
 defmodule LiveProps.LiveView do
   @moduledoc """
-  Functions for managing state within Phoenix LiveViews.
+  Use this module inside a Phoenix.LiveView to add state management functionality to your
+  liveviews
   """
   import Phoenix.LiveView
 
-  alias LiveProps.API
-
   defmacro __using__(_) do
     quote do
-      use LiveProps.API, include: [:state]
+      use LiveProps, include: [:state]
 
       @before_compile unquote(__MODULE__)
     end
@@ -36,12 +35,14 @@ defmodule LiveProps.LiveView do
 
         def mount(params, session, socket) do
           if connected?(socket), do: send(self(), {:liveprops, :after_connect, []})
-          socket = LiveProps.API.__assign_states__(socket, :defaults, __MODULE__)
+
+          socket = LiveProps.__assign_states__(socket, :defaults, __MODULE__)
+
           {:ok, socket} = super(params, session, socket)
-          socket = LiveProps.API.__assign_states__(socket, :computed, __MODULE__)
+
+          socket = LiveProps.__assign_states__(socket, :computed, __MODULE__)
 
           {:ok, socket}
-          # LiveProps.LiveView.__mount__(params, session, socket, __MODULE__)
         end
       end
     else
@@ -53,42 +54,25 @@ defmodule LiveProps.LiveView do
     end
   end
 
-  @doc """
-  Assigns states with default or computed values defined in the given
-  module to the socket to the
-  socket and returns `{:ok, socket}`.
-
-  All states with default or computed values (i.e. those defined with
-  the `:default` or `:compute` options, respectively) will be assigned
-  on mount, except computed values defined with `after_connect: true`.
-  Those will be computed and assigned in a pre-defined
-  `c:Phoenix.LiveView.handle_info/2` callback that
-  will get invoked asynchronously after the socket
-  is connected.
-  """
+  @doc false
   def __mount__(_params, _session, socket, module) do
     if connected?(socket), do: send(self(), {:liveprops, :after_connect, []})
 
     {:ok,
       socket
-      |> API.__assign_states__(:defaults, module)
-      |> API.__assign_states__(:computed, module)}
+      |> LiveProps.__assign_states__(:defaults, module)
+      |> LiveProps.__assign_states__(:computed, module)}
   end
 
+  @doc false
   def __handle_info__({event, args}, socket, module) do
     apply(__MODULE__, event, [socket, module] ++ args)
   end
 
-  # @doc """
-  # Assigns any states defined with `after_connect: true` in the given
-  # module to the socket.
-
-  # Returns `{:noreply, socket}`
-  # """
   @doc false
   def after_connect(socket, module) do
     {:noreply,
       socket
-      |> API.__assign_states__(:async, module)}
+      |> LiveProps.__assign_states__(:async, module)}
   end
 end

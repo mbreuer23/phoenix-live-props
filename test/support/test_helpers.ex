@@ -3,7 +3,7 @@ defmodule LiveProps.TestHelpers do
     quote do
       assert_raise unquote(error), unquote(message), fn ->
         defmodule Error do
-          use LiveProps.API, include: [:prop, :state]
+          use LiveProps, include: [:prop, :state]
           unquote(do_block)
         end
       end

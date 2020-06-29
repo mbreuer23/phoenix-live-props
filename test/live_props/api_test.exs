@@ -5,9 +5,9 @@ defmodule LiveProps.APITest do
 
   describe "Module ValidProps" do
     defmodule ValidProps do
-      require LiveProps.API
+      require LiveProps
 
-      use LiveProps.API, include: [:prop]
+      use LiveProps, include: [:prop]
 
       prop(:id, :atom, required: true)
       prop(:user, :map, required: false, default: %{id: 1})
@@ -37,7 +37,7 @@ defmodule LiveProps.APITest do
     alias Phoenix.LiveView.Socket
 
     defmodule ValidStates do
-      use LiveProps.API, include: [:state]
+      use LiveProps, include: [:state]
 
       state(:ready, :boolean, default: false)
       state(:count, :integer, compute: :get_count)
@@ -62,11 +62,11 @@ defmodule LiveProps.APITest do
     end
 
     test "can set states" do
-      socket = LiveProps.API.__set_state__(%Socket{}, %{ready: :ready}, ValidStates)
+      socket = LiveProps.__set_state__(%Socket{}, %{ready: :ready}, ValidStates)
       assert socket.assigns.ready == :ready
 
       assert_raise RuntimeError, ~r/Cannot set state/, fn ->
-        LiveProps.API.__set_state__(%Socket{}, %{not_a_state: true}, ValidStates)
+        LiveProps.__set_state__(%Socket{}, %{not_a_state: true}, ValidStates)
       end
     end
   end

@@ -62,12 +62,10 @@ defmodule LiveProps.LiveView do
   def __mount__(_params, _session, socket, module) do
     if connected?(socket), do: send(self(), {:liveprops, :after_connect, []})
 
-    socket =
+    {:ok,
       socket
       |> API.__assign_states__(:defaults, module)
-      |> API.__assign_states__(:computed, module)
-
-    {:ok, socket}
+      |> API.__assign_states__(:computed, module)}
   end
 
   def __handle_info__({event, args}, socket, module) do
@@ -81,10 +79,8 @@ defmodule LiveProps.LiveView do
   Returns `{:noreply, socket}`
   """
   def after_connect(socket, module) do
-    socket =
+    {:noreply,
       socket
-      |> API.__assign_states__(:async, module)
-
-    {:noreply, socket}
+      |> API.__assign_states__(:async, module)}
   end
 end

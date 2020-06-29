@@ -79,6 +79,7 @@ defmodule LiveProps.IntegrationTest.LiveView do
     assert html =~ "Welcome user 1"
     refute html =~ "List comments"
 
+    # changing props are reflected in component
     html =
       view
       |> element("#toggle")
@@ -88,6 +89,7 @@ defmodule LiveProps.IntegrationTest.LiveView do
     assert html =~ ":comment1"
     assert html =~ "count: 2"
 
+    # changing Child state from Parent
     view
     |> element("#update")
     |> render_click()
@@ -96,14 +98,12 @@ defmodule LiveProps.IntegrationTest.LiveView do
     assert html =~ ":updated_comments"
     assert html =~ "count: 1"
 
-
+    # changing Child state within Child
     html =
       view
       |> element("#set-state")
       |> render_click()
 
     assert html =~ "count: 4"
-
-
   end
 end

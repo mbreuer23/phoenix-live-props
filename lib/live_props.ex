@@ -6,7 +6,7 @@ defmodule LiveProps do
   ### Features
 
     * Declaratively define props and state, initialize default values, and compute derived values
-    using the `LiveProps.prop/3` and `LiveProps.state/3` macros.
+    using the `LiveProps.Prop.prop/3` and `LiveProps.Prop.state/3` macros.
 
     * Supports required props
 
@@ -67,7 +67,7 @@ defmodule LiveProps do
 
   Lastly, the component has a state called `:mode` which controls the display.  We've given
   it a default value, which is assigned on mount behind the scenes.  We could also add computed states
-  that depend on other states.  In the "toggle_mode" handler we use `LiveProps.set_state/3` to
+  that depend on other states.  In the "toggle_mode" handler we use `LiveProps.States.set_state/3` to
   update the `:mode`.  We could have just done a regular `Phoenix.LiveView.assign/3` call but
   using `set_state/3` ensures the key we passed in was a previously declared state (useful for
   quickly identifying bugs) and, if we had computed states, it would trigger their re-calculation

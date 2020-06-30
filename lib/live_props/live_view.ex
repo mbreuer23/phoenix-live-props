@@ -23,6 +23,7 @@ defmodule LiveProps.LiveView do
           use LiveProps.LiveView
 
           state :user_id, :integer
+          state :scale, :atom, default: :fahrenheit
           state :temperature, :float, compute: :get_temperature
 
           def render(assigns) do
@@ -34,14 +35,25 @@ defmodule LiveProps.LiveView do
           end
 
           def mount(_, %{"current_user_id" => user_id}, socket) do
+            # socket.assigns.scale already has a default value
             {:ok, assign(socket, :user_id, user_id)}
           end
 
           def get_temperature(assigns) do
-            Temperature.get_user_reading(assigns.user_id)
+            Temperature.get_user_reading(assigns.user_id, assigns.scale)
           end
         end
 
+  First we defined a `:user_id` state.  This doesn't really do anything other than serve
+  as documentation, since we assign it manually in the mount callback.
+  Still, depending on your preferences, you may find it helpful to have a list of all assigns in one place.
+
+  Next we defined the `:scale` state and gave it a default value.  This value will be assigned automatically
+  on mount and will be available in any custom mount you define.
+
+  Finally we defined the `:temperature` state, with the options `compute: :get_temperature`.  This means
+  this state will be calculated by the `get_temperature/1` function, which takes the current assigns
+  as an argument and returns the value to be assigned.
   '''
   import Phoenix.LiveView
 

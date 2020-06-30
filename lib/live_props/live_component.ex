@@ -1,5 +1,39 @@
 defmodule LiveProps.LiveComponent do
   @moduledoc """
+  When you `use LiveProps.LiveComponent` in your Phoenix LiveComponent, all of the functionality
+  in `LiveProps.Props` and `LiveProps.States` will be imported.
+
+  An example LiveComponent can be found in the `LiveProps` documentation.
+
+  ## Component Lifecycle
+
+  A Phoenix LiveComponent defines several callbacks, such as `mount/1`, `preload/`, and `update/2`.
+  LiveProps injects these callbacks under the hood so you don't have to (but you can if you want).
+
+  If you do not define your own callbacks, the injected ones will be executed as follows:
+
+          mount/1             --->    update/2
+      (default and computed          (default and computed props
+        states assigned)               merged and assigned)
+
+  States and props will always be assigned in the order defined.
+
+  If you do define a mount or update callback, they will be run **after** the associated
+  callback injected by LiveProps.  In other words, in your mount/1 callback, default and calculated
+  states will already be assigned to the socket.  In your update/2 callback, default and computed props
+  will have been assigned too.
+
+  If you define a `c.Phoenix.LiveComponent.update/2` callback, which takes a list of assigns,
+  default and computed props will be available in all assigns.
+
+  ## Pitfalls
+
+  If you try to pass a value to a LiveProps.LiveComponent and it has been declared
+  in that component as a state using the `LiveProps.States.state/3` macro, it
+  will be ignored. (i.e. will not be assigned to the socket).
+
+  For related reasons, `Phoenix.LiveView.send_update/2` will not work with LiveProps LiveComponents,
+  so you'll need to use `LiveProps.States.send_state/3` instead.
 
   """
 

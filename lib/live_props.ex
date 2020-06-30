@@ -73,24 +73,15 @@ defmodule LiveProps do
   quickly identifying bugs) and, if we had computed states, it would trigger their re-calculation
   as well.
 
-  Notice what our component does not have: a `c:Phoenix.LiveComponent.mount/1` or `c:Phoenix.LiveComponent.update/2`
-  callback.  LiveProps handles that for you, by injecting lightweight mount/1 and update/2 callbacks under the hood.
-  In pseudocode, these callbacks look like the following:
+  Notice what our component does not have: a `c:Phoenix.LiveComponent.mount/1`, `c:Phoenix.LiveComponent.update/2`
+  or `c:Phoenix.LiveComponent.preload/1` callback.  LiveProps handles that for you, by injecting lightweight callbacks
+  behind the scenes.
 
-      def mount(socket) do
-        {:ok, assign_default_states(socket)}
-      end
-
-      def update(assigns, socket) do
-        raise_if_missing_required_props!(assigns)
-
-        {:ok, assign_props_and_computed_props(socket)}
-      end
-
-  While LiveProps defines `mount` and `update` callbacks for you.  You can still define your own
-  and everything will continue to work.  In a LiveComponent, any mount or update callbacks
+  You can still define your own callbacks if you need to, and everything should continue to work.
+  In a LiveComponent, any callbacks
   you define will be run **after** the the LiveProps callbacks (i.e. defaults and computed values
-  will already be assigned to the socket).
+  will already be assigned to the socket).  The `LiveProps.LiveComponent` documentation
+  has additional information on component lifecycles.
 
   This module is not intended to be used directly but rather by means of
   `LiveProps.LiveView` and `LiveProps.LiveComponent`.  Please see docs for those

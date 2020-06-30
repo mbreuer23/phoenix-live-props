@@ -10,8 +10,6 @@ defmodule LiveProps do
 
     * Supports required props
 
-    * Supports asynchronous loading of state.
-
     * Supports automatic re-computation of computed props and state
 
     * Props automatically added to module documentation.

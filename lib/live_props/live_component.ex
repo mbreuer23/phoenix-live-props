@@ -17,7 +17,7 @@ defmodule LiveProps.LiveComponent do
     ]
   end
 
-  def quoted_preload(env) do
+  defp quoted_preload(env) do
     if Module.defines?(env.module, {:preload, 1}) do
       quote do
         defoverridable preload: 1

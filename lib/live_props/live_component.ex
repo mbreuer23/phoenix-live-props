@@ -5,7 +5,7 @@ defmodule LiveProps.LiveComponent do
 
   An example LiveComponent can be found in the `LiveProps` documentation.
 
-  ## Component Lifecycle
+  ### Component Lifecycle
 
   A Phoenix LiveComponent defines several callbacks, such as `mount/1`, `preload/`, and `update/2`.
   LiveProps injects these callbacks under the hood so you don't have to (but you can if you want).
@@ -14,7 +14,7 @@ defmodule LiveProps.LiveComponent do
 
           mount/1             --->    update/2
       (default and computed          (default and computed props
-        states assigned)               merged and assigned)
+        states assigned)               merged/assigned)
 
   States and props will always be assigned in the order defined.
 
@@ -26,7 +26,7 @@ defmodule LiveProps.LiveComponent do
   If you define a `c.Phoenix.LiveComponent.update/2` callback, which takes a list of assigns,
   default and computed props will be available in all assigns.
 
-  ## Pitfalls
+  ### Pitfalls
 
   If you try to pass a value to a LiveProps.LiveComponent and it has been declared
   in that component as a state using the `LiveProps.States.state/3` macro, it

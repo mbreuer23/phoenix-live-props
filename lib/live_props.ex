@@ -67,9 +67,8 @@ defmodule LiveProps do
   it a default value, which is assigned on mount behind the scenes.  We could also add computed states
   that depend on other states.  In the "toggle_mode" handler we use `LiveProps.States.set_state/3` to
   update the `:mode`.  We could have just done a regular `Phoenix.LiveView.assign/3` call but
-  using `set_state/3` ensures the key we passed in was a previously declared state (useful for
-  quickly identifying bugs) and, if we had computed states, it would trigger their re-calculation
-  as well.
+  using `set_state/3` if useful if when we want to trigger the re-calculation of other states
+  as well. (in this case, there are none)
 
   Notice what our component does not have: a `c:Phoenix.LiveComponent.mount/1`, `c:Phoenix.LiveComponent.update/2`
   or `c:Phoenix.LiveComponent.preload/1` callback.  LiveProps handles that for you, by injecting lightweight callbacks

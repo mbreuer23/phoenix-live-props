@@ -28,7 +28,7 @@ defmodule LiveProps.LiveComponent do
 
   ### Pitfalls
 
-  If you try to pass a value to a LiveProps.LiveComponent and it has been declared
+  If you try to pass a value to a LiveProps.LiveComponent and it has not been declared
   in that component as a state using the `LiveProps.States.state/3` macro, it
   will be ignored. (i.e. will not be assigned to the socket).
 

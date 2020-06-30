@@ -9,6 +9,7 @@ defmodule LiveProps.IntegrationTest.LiveView do
     use Phoenix.LiveView
     use LiveProps.LiveView
     alias LiveProps.IntegrationTest.LiveView.Child1
+    alias LiveProps.IntegrationTest.LiveView.ChildWithPreloads
 
     state :user_id, :integer, default: 1
     state :show_comments, :boolean, default: false
@@ -19,11 +20,15 @@ defmodule LiveProps.IntegrationTest.LiveView do
 
       <button phx-click="toggle" id="toggle">Show Comments</button>
       <button phx-click="update", id="update">Update comments</button>
-
+      <button phx-click="update2", id="update2">Update child2</button>
       <%= live_component @socket, Child1,
         id: "child1",
         user_id: @user_id,
         show_comments: @show_comments %>
+
+      <%= live_component @socket, ChildWithPreloads,
+        id: "child2",
+        child_prop: :a_property %>
       """
     end
 
@@ -33,6 +38,11 @@ defmodule LiveProps.IntegrationTest.LiveView do
 
     def handle_event("update", _, socket) do
       send_state(Child1, "child1", comments: [:updated_comments])
+      {:noreply, socket}
+    end
+
+    def handle_event("update2", _, socket) do
+      send_state(ChildWithPreloads, "child2", some_state: "Child2 updated from parent")
       {:noreply, socket}
     end
   end
@@ -75,6 +85,33 @@ defmodule LiveProps.IntegrationTest.LiveView do
     end
   end
 
+  defmodule ChildWithPreloads do
+    use Phoenix.LiveComponent
+    use LiveProps.LiveComponent
+
+    prop :child_prop, :any
+    prop :computed_prop, :any, default: nil, compute: :do_compute
+    prop :preload, :string
+
+    state :some_state, :string, default: "some state"
+
+    def render(assigns) do
+      ~L"""
+      <div><%= @preload %></div>
+      """
+    end
+
+    def preload(list_of_assigns) do
+      Enum.map(list_of_assigns, fn assigns ->
+        Map.put(assigns, :preload, "i've been preloaded")
+      end)
+    end
+
+    def do_compute(assigns) do
+      assigns.child_prop
+    end
+  end
+
   setup do
     [conn: Phoenix.ConnTest.build_conn()]
   end
@@ -110,5 +147,14 @@ defmodule LiveProps.IntegrationTest.LiveView do
       |> render_click()
 
     assert html =~ "count: 4"
+
+    # changing Child2 stte with preload hooks
+    view
+    |> element("#update2")
+    |> render_click()
+
+    html = view |> render()
+
+    html =~ "Child2 updated from parent"
   end
 end

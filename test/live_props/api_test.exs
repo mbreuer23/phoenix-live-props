@@ -65,10 +65,15 @@ defmodule LiveProps.APITest do
       socket = LiveProps.__set_state__(%Socket{}, %{ready: :ready}, ValidStates)
       assert socket.assigns.ready == :ready
 
-      assert_raise RuntimeError, ~r/Cannot set state/, fn ->
-        LiveProps.__set_state__(%Socket{}, %{not_a_state: true}, ValidStates)
-      end
+      # invalid states ignored
+      socket = LiveProps.__set_state__(socket, %{not_a_state: true}, ValidStates)
+      refute Map.has_key?(socket.assigns, :not_a_state)
+
+      # assert_raise RuntimeError, ~r/Cannot set state/, fn ->
+      #   LiveProps.__set_state__(%Socket{}, %{not_a_state: true}, ValidStates)
+      # end
     end
+
   end
 
   describe "Props Validations" do

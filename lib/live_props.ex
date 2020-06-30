@@ -151,26 +151,33 @@ defmodule LiveProps do
     assigns = Enum.into(assigns, %{})
 
     valid_states = for s <- module.__states__(:all), do: s.name
-    supplied_states = Map.keys(assigns)
+    # supplied_states = Map.keys(assigns)
 
-    case supplied_states -- valid_states do
-      [] ->
-        :ok
-
-      any ->
-        raise RuntimeError, """
-          Cannot set state(s) #{inspect(any)} because they have not been defined as states
-          in module #{inspect(module)}
-
-          The following states are defined:
-          #{inspect(valid_states)}
-        """
+    for {k, v} <- assigns, k in valid_states, reduce: socket do
+      socket ->
+        Phoenix.LiveView.assign(socket, k, v)
     end
-
-    socket
-    |> Phoenix.LiveView.assign(assigns)
     |> __assign_states__(:computed, module)
     |> __assign_states__(:async, module)
+
+    # case supplied_states -- valid_states do
+    #   [] ->
+    #     :ok
+
+    #   any ->
+    #     raise RuntimeError, """
+    #       Cannot set state(s) #{inspect(any)} because they have not been defined as states
+    #       in module #{inspect(module)}
+
+    #       The following states are defined:
+    #       #{inspect(valid_states)}
+    #     """
+    # end
+
+    # socket
+    # |> Phoenix.LiveView.assign(assigns)
+    # |> __assign_states__(:computed, module)
+    # |> __assign_states__(:async, module)
   end
 
   def __prop__(name, type, opts, module) do
@@ -191,16 +198,16 @@ defmodule LiveProps do
   defp should_force?(:computed), do: true
   defp should_force?(_), do: false
 
-  # def __assign_props__(socket, kind, module) do
-  #   value_key = get_assigns_value_key(kind)
-  #   call_functions? = should_call_functions?(kind)
-  #   props = module.__props__(kind)
-  #   force? = should_force?(kind)
+  def __assign_props__(socket, kind, module) do
+    value_key = get_assigns_value_key(kind)
+    call_functions? = should_call_functions?(kind)
+    props = module.__props__(kind)
+    force? = should_force?(kind)
 
-  #   Enum.reduce(props, socket, fn prop, socket ->
-  #     assign(socket, prop, value_key, call_functions?, force?)
-  #   end)
-  # end
+    Enum.reduce(props, socket, fn prop, socket ->
+      assign(socket, prop, value_key, call_functions?, force?)
+    end)
+  end
 
   def __put_props__(assigns, kind, module) do
     value_key = get_assigns_value_key(kind)
@@ -209,7 +216,6 @@ defmodule LiveProps do
     force? = should_force?(kind)
 
     Enum.reduce(props, assigns, fn prop, assigns ->
-      IO.inspect(force?, label: "should force prop #{inspect(prop.name)}")
       put(assigns, prop, value_key, call_functions?, force?)
     end)
   end

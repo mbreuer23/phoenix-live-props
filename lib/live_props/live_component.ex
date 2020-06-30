@@ -1,4 +1,8 @@
 defmodule LiveProps.LiveComponent do
+  @moduledoc """
+
+  """
+
   import Phoenix.LiveView
   require LiveProps
   defmacro __using__(_) do
@@ -23,37 +27,39 @@ defmodule LiveProps.LiveComponent do
         defoverridable preload: 1
 
         def preload(list_of_assigns) do
-          LiveProps.LiveComponent.__preload__(list_of_assigns, __MODULE__)
+          list_of_assigns = LiveProps.LiveComponent.__preload__(list_of_assigns, __MODULE__)
           super(list_of_assigns)
         end
       end
-    else
-      quote do
-        def preload(list_of_assigns) do
-          LiveProps.LiveComponent.__preload__(list_of_assigns, __MODULE__)
-        end
-      end
+    # else
+    #   quote do
+    #     def preload(list_of_assigns) do
+    #       LiveProps.LiveComponent.__preload__(list_of_assigns, __MODULE__)
+    #     end
+    #   end
     end
   end
 
   defp quoted_update(env) do
+    preloaded = Module.defines?(env.module, {:preload, 1})
+
     if Module.defines?(env.module, {:update, 2}) do
       quote do
         defoverridable update: 2
 
         def update(%{lp_command: :set_state} = assigns, socket) do
-          LiveProps.LiveComponent.__update__(assigns, socket, __MODULE__)
+          LiveProps.LiveComponent.__update__(assigns, socket, __MODULE__, unquote(preloaded))
         end
 
         def update(assigns, socket) do
-          {:ok, socket} = LiveProps.LiveComponent.__update__(assigns, socket, __MODULE__)
+          {:ok, socket} = LiveProps.LiveComponent.__update__(assigns, socket, __MODULE__, unquote(preloaded))
           super(assigns, socket)
         end
       end
     else
       quote do
         def update(assigns, socket) do
-          LiveProps.LiveComponent.__update__(assigns, socket, __MODULE__)
+          LiveProps.LiveComponent.__update__(assigns, socket, __MODULE__, unquote(preloaded))
         end
       end
     end
@@ -92,7 +98,7 @@ defmodule LiveProps.LiveComponent do
     end)
   end
 
-  def __update__(%{lp_command: :set_state} = assigns, socket, module) do
+  def __update__(%{lp_command: :set_state} = assigns, socket, module, _preloaded) do
     new_assigns = Map.drop(assigns, [:lp_command, :id])
 
     {:ok,
@@ -100,12 +106,28 @@ defmodule LiveProps.LiveComponent do
       |> LiveProps.__set_state__(new_assigns, module)}
   end
 
-  def __update__(assigns, socket, module) do
+  def __update__(assigns, socket, module, preloaded?) do
     require_props!(assigns, module)
 
-    {:ok,
-      socket
-      |> assign(drop_states(assigns, module))}
+    socket =
+      case preloaded? do
+        true ->
+          socket
+          |> assign(assigns)
+
+        false ->
+          socket
+          |> assign(drop_states(assigns, module))
+          |> LiveProps.__assign_props__(:defaults, module)
+          |> LiveProps.__assign_props__(:computed, module)
+      end
+
+    {:ok, socket}
+    # {:ok,
+    #   socket
+    #   |> assign(drop_states(assigns, module))
+    #   |> LiveProps.__put_props__(:defaults, module)
+    #   |> LiveProps.__put_props__(:computed, module)}
   end
 
   def __mount__(socket, module) do

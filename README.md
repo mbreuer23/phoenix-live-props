@@ -10,7 +10,7 @@ by adding `live_props` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:live_props, "~> 0.1.0"}
+    {:live_props, "~> 0.2.0"}
   ]
 end
 ```

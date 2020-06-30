@@ -32,28 +32,26 @@ defmodule LiveProps.MixProject do
       {:phoenix_live_view, "~> 0.13.2"},
       {:floki, ">= 0.0.0", only: :test},
       {:jason, "~> 1.2", only: :test},
-      {:ex_doc, "~> 0.22", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.22", only: :dev, runtime: false}
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]
   end
 
-
   def package do
     [
       licenses: ["MIT"],
-      links: %{github: "https://github.com/mbreuer23/phoenix-live-props"},
+      links: %{github: "https://github.com/mbreuer23/phoenix-live-props"}
     ]
   end
 
   defp docs do
     [
       main: "LiveProps",
-      source_url: "https://github.com/mbreuer23/phoenix-live-props",
+      source_url: "https://github.com/mbreuer23/phoenix-live-props"
       # extra_section: "GUIDES",
       # extras: extras(),
       # groups_for_extras: groups_for_extras(),
       # groups_for_modules: groups_for_modules()
     ]
   end
-
 end

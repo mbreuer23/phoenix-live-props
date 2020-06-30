@@ -134,24 +134,17 @@ defmodule LiveProps do
 
   defmacro __before_compile__(env) do
     LiveProps.Docs.generate_docs(env)
+
     [
       quoted_prop_api(env),
       quoted_state_api(env)
     ]
   end
 
-  # @spec prop(name :: atom(), type :: atom(), opts :: list()) :: :ok
-  # defmacro prop(name, type, opts \\ []) do
-  #   quote do
-  #     LiveProps.__prop__(unquote(name), unquote(type), unquote(opts), __MODULE__)
-  #   end
-  # end
-
   def __set_state__(socket, assigns, module) do
     assigns = Enum.into(assigns, %{})
 
     valid_states = for s <- module.__states__(:all), do: s.name
-    # supplied_states = Map.keys(assigns)
 
     for {k, v} <- assigns, k in valid_states, reduce: socket do
       socket ->
@@ -159,25 +152,6 @@ defmodule LiveProps do
     end
     |> __assign_states__(:computed, module)
     |> __assign_states__(:async, module)
-
-    # case supplied_states -- valid_states do
-    #   [] ->
-    #     :ok
-
-    #   any ->
-    #     raise RuntimeError, """
-    #       Cannot set state(s) #{inspect(any)} because they have not been defined as states
-    #       in module #{inspect(module)}
-
-    #       The following states are defined:
-    #       #{inspect(valid_states)}
-    #     """
-    # end
-
-    # socket
-    # |> Phoenix.LiveView.assign(assigns)
-    # |> __assign_states__(:computed, module)
-    # |> __assign_states__(:async, module)
   end
 
   def __prop__(name, type, opts, module) do
@@ -251,11 +225,11 @@ defmodule LiveProps do
       else
         attribute[value_key]
       end
+
     case force? do
       true -> Phoenix.LiveView.assign(socket, attribute.name, value)
       false -> Phoenix.LiveView.assign_new(socket, attribute.name, fn -> value end)
     end
-
   end
 
   defp define(attribute, name, type, opts, module) do
@@ -292,7 +266,7 @@ defmodule LiveProps do
   defp quoted_state_api(env) do
     states = Module.get_attribute(env.module, prefix(:state), []) |> Enum.reverse()
     default_states = for s <- states, s[:has_default] == true, do: s
-    computed_states = for s <- states, s[:is_computed] == true && s[:after_connect] !=true, do: s
+    computed_states = for s <- states, s[:is_computed] == true && s[:after_connect] != true, do: s
     async_states = for s <- states, s[:is_computed] == true && s[:after_connect] == true, do: s
 
     quote do

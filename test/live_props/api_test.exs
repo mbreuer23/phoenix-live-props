@@ -73,7 +73,6 @@ defmodule LiveProps.APITest do
       #   LiveProps.__set_state__(%Socket{}, %{not_a_state: true}, ValidStates)
       # end
     end
-
   end
 
   describe "Props Validations" do

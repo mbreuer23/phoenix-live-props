@@ -1,6 +1,5 @@
 ExUnit.start()
 
-
 defmodule Router do
   use Phoenix.Router
 end

@@ -5,6 +5,7 @@ defmodule LiveProps.LiveComponent do
 
   import Phoenix.LiveView
   require LiveProps
+
   defmacro __using__(_) do
     quote do
       use LiveProps, include: [:state, :prop]
@@ -31,12 +32,6 @@ defmodule LiveProps.LiveComponent do
           super(list_of_assigns)
         end
       end
-    # else
-    #   quote do
-    #     def preload(list_of_assigns) do
-    #       LiveProps.LiveComponent.__preload__(list_of_assigns, __MODULE__)
-    #     end
-    #   end
     end
   end
 
@@ -52,7 +47,9 @@ defmodule LiveProps.LiveComponent do
         end
 
         def update(assigns, socket) do
-          {:ok, socket} = LiveProps.LiveComponent.__update__(assigns, socket, __MODULE__, unquote(preloaded))
+          {:ok, socket} =
+            LiveProps.LiveComponent.__update__(assigns, socket, __MODULE__, unquote(preloaded))
+
           super(assigns, socket)
         end
       end
@@ -88,7 +85,6 @@ defmodule LiveProps.LiveComponent do
     Enum.map(list_of_assigns, fn
       %{lp_command: :set_state} = assigns ->
         assigns
-        # |> Map.drop([:lp_command, :id])
 
       assigns ->
         assigns
@@ -102,8 +98,8 @@ defmodule LiveProps.LiveComponent do
     new_assigns = Map.drop(assigns, [:lp_command, :id])
 
     {:ok,
-      socket
-      |> LiveProps.__set_state__(new_assigns, module)}
+     socket
+     |> LiveProps.__set_state__(new_assigns, module)}
   end
 
   def __update__(assigns, socket, module, preloaded?) do
@@ -123,11 +119,6 @@ defmodule LiveProps.LiveComponent do
       end
 
     {:ok, socket}
-    # {:ok,
-    #   socket
-    #   |> assign(drop_states(assigns, module))
-    #   |> LiveProps.__put_props__(:defaults, module)
-    #   |> LiveProps.__put_props__(:computed, module)}
   end
 
   def __mount__(socket, module) do
@@ -136,10 +127,10 @@ defmodule LiveProps.LiveComponent do
     # Should be warn the user if they try to user :after_connect option
     # in a component?
     {:ok,
-      socket
-      |> LiveProps.__assign_states__(:defaults, module)
-      |> LiveProps.__assign_states__(:computed, module)
-      |> LiveProps.__assign_states__(:async, module)}
+     socket
+     |> LiveProps.__assign_states__(:defaults, module)
+     |> LiveProps.__assign_states__(:computed, module)
+     |> LiveProps.__assign_states__(:async, module)}
   end
 
   defp drop_states(assigns, module) do

@@ -29,10 +29,12 @@ defmodule LiveProps.LiveComponentTest do
       end
 
       def get_count(_), do: 10
+
       def get_items(assigns) do
         case assigns[:ready] do
           :updated ->
             [:updated_items]
+
           _ ->
             [:items]
         end
@@ -53,7 +55,6 @@ defmodule LiveProps.LiveComponentTest do
       for k <- [:id, :authenticated, :count] do
         assert Map.has_key?(socket.assigns, k) == false
       end
-
     end
 
     test "updates correctly" do
@@ -80,10 +81,14 @@ defmodule LiveProps.LiveComponentTest do
       assert socket.assigns.ready == false
       assert socket.assigns.items == [:items]
 
-      {:ok, socket} = Component.update(%{
-        lp_command: :set_state,
-        ready: :updated
-      }, socket)
+      {:ok, socket} =
+        Component.update(
+          %{
+            lp_command: :set_state,
+            ready: :updated
+          },
+          socket
+        )
 
       assert socket.assigns.ready == :updated
       assert socket.assigns.items == [:updated_items]

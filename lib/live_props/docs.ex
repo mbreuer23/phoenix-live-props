@@ -25,6 +25,7 @@ defmodule LiveProps.Docs do
     case prop[:doc] do
       nil ->
         ""
+
       doc ->
         " - #{doc}."
     end
@@ -54,22 +55,22 @@ defmodule LiveProps.Docs do
   end
 
   defp generate_props_docs(module) do
-   props = Module.get_attribute(module, LiveProps.prefix(:prop), [])
-   noncomputed_props = for p <- props, p[:is_computed] != true, do: p
-   computed_props = props -- noncomputed_props
+    props = Module.get_attribute(module, LiveProps.prefix(:prop), [])
+    noncomputed_props = for p <- props, p[:is_computed] != true, do: p
+    computed_props = props -- noncomputed_props
 
-   proplist(noncomputed_props, "Properties") <> proplist(computed_props, "Computed properties")
+    proplist(noncomputed_props, "Properties") <> proplist(computed_props, "Computed properties")
   end
 
   defp format_opts(opts_ast) do
     opts_ast
     |> Macro.to_string()
     |> String.slice(1..-2)
+
     # |> backtick_functions()
   end
 
   # defp backtick_functions(string) do
   #   Regex.replace(~r/&(.*)\/{}/, string, replacement, options \\ [])/
   # end
-
 end

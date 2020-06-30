@@ -83,9 +83,9 @@ defmodule LiveProps.LiveView do
     if connected?(socket), do: send(self(), {:liveprops, :after_connect, []})
 
     {:ok,
-      socket
-      |> LiveProps.__assign_states__(:defaults, module)
-      |> LiveProps.__assign_states__(:computed, module)}
+     socket
+     |> LiveProps.__assign_states__(:defaults, module)
+     |> LiveProps.__assign_states__(:computed, module)}
   end
 
   @doc false
@@ -96,7 +96,7 @@ defmodule LiveProps.LiveView do
   @doc false
   def after_connect(socket, module) do
     {:noreply,
-      socket
-      |> LiveProps.__assign_states__(:async, module)}
+     socket
+     |> LiveProps.__assign_states__(:async, module)}
   end
 end

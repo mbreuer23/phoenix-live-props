@@ -16,7 +16,6 @@ defmodule LiveProps do
 
     * Props automatically added to module documentation.
 
-
   ### Example
 
   Inside a LiveView or LiveComponent, you must use `LiveProps.LiveView` or `LiveProps.LiveComponent`,
@@ -51,13 +50,10 @@ defmodule LiveProps do
           Thermostat.get_user_reading(assigns.user_id)
         end
 
-        def handle_event("toggle-mode", _, socket) do
-          new_mode =
-            if socket.assigns.mode == :verbose,
-              do: :compact,
-              else: :verbose
+        def handle_event("toggle-mode", _, %{assigns: assigns} = socket) do
+          new_mode = if assigns.mode == :verbose, do: :compact, else: :verbose
 
-          {:noreply, assign(socket, :mode, new_mode)}
+          {:noreply, set_state(socket, :mode, new_mode)}
         end
       end
 
@@ -70,8 +66,12 @@ defmodule LiveProps do
   in the order defined so we could add even more computed props which depend on the temperature assign.
 
   Lastly, the component has a state called `:mode` which controls the display.  We've given
-  it a default value, which is assigned on mount.  We could also add computed states
-  which depends on other states.
+  it a default value, which is assigned on mount behind the scenes.  We could also add computed states
+  that depend on other states.  In the "toggle_mode" handler we use `LiveProps.set_state/3` to
+  update the `:mode`.  We could have just done a regular `Phoenix.LiveView.assign/3` call but
+  using `set_state/3` ensures the key we passed in was a previously declared state (useful for
+  quickly identifying bugs) and, if we had computed states, it would trigger their re-calculation
+  as well.
 
   Notice what our component does not have: a `c:Phoenix.LiveComponent.mount/1` or `c:Phoenix.LiveComponent.update/2`
   callback.  LiveProps handles that for you, by injecting lightweight mount/1 and update/2 callbacks under the hood.
@@ -90,7 +90,7 @@ defmodule LiveProps do
   While LiveProps defines `mount` and `update` callbacks for you.  You can still define your own
   and everything will continue to work.  In a LiveComponent, any mount or update callbacks
   you define will be run **after** the the LiveProps callbacks (i.e. defaults and computed values
-  will already be assigned to the socket)
+  will already be assigned to the socket).
 
   This module is not intended to be used directly but rather by means of
   `LiveProps.LiveView` and `LiveProps.LiveComponent`.  Please see docs for those

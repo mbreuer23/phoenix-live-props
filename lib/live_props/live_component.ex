@@ -10,6 +10,8 @@ defmodule LiveProps.LiveComponent do
   end
 
   defmacro __before_compile__(env) do
+    # TODO - maybe assigns defaults in preload?
+
     [
       quoted_update(env),
       quoted_mount(env)

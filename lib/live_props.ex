@@ -62,7 +62,7 @@ defmodule LiveProps do
 
   We also have the `:temperature` prop, which is a computed prop.  This will be re-calculated
   automatically anytime the :user_id prop changes.  It is calculated by `get_temperature/1` which
-  takes the socket as an argument and returns the value to be assigned.  Calculations are run
+  takes the socket assigns as an argument and returns the value to be assigned.  Calculations are run
   in the order defined so we could add even more computed props which depend on the temperature assign.
 
   Lastly, the component has a state called `:mode` which controls the display.  We've given

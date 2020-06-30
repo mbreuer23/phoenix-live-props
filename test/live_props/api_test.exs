@@ -15,7 +15,7 @@ defmodule LiveProps.APITest do
       prop(:user_name_2, :string, compute: &ValidProps.get_user_name/1)
       # prop(:identity, :integer, compute: fn _ -> 1 end)
 
-      def get_user_name(%{assigns: assigns}) do
+      def get_user_name(assigns) do
         "user-#{assigns.user.id}"
       end
     end

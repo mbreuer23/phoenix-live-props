@@ -140,56 +140,11 @@ defmodule LiveProps do
     ]
   end
 
-  # @doc """
-  # Define a property with the given name and type. Returns `:ok`
-
-  # This macro is meant to be called within a LiveComponent only.
-  # Types can be any atom and are just for documentation purposes.
-
-  # ## Options:
-
-  #   * `:default` - A default value to assign to the prop.
-  #   * `:required` - boolean.  If true, an error will be raised
-  #   if the prop is not passed to the component.
-  #   * `:compute` - 1-arity function that takes the socket as an argument
-  #   and returns the value to be assigned.  Can be an atom of the name
-  #   of a function in your component or a remote function call like `&MyModule.compute/1`
-  # """
   # @spec prop(name :: atom(), type :: atom(), opts :: list()) :: :ok
   # defmacro prop(name, type, opts \\ []) do
   #   quote do
   #     LiveProps.__prop__(unquote(name), unquote(type), unquote(opts), __MODULE__)
   #   end
-  # end
-
-  # @doc """
-  # Define state of given name and type.  Returns :ok.
-
-  # Types can be any atom and are just for documentation purposes.
-
-
-  # """
-  # @spec state(name :: atom(), type :: atom(), opts :: list()) :: :ok
-  # defmacro state(name, type, opts \\ []) do
-  #   quote do
-  #     LiveProps.__state__(unquote(name), unquote(type), unquote(opts), __MODULE__)
-  #   end
-  # end
-
-  # defmacro set_state(socket, assigns) do
-  #   quote do
-  #     LiveProps.__set_state__(unquote(socket), unquote(assigns), __MODULE__)
-  #   end
-  # end
-
-  # defmacro set_state(socket, key, value) do
-  #   quote do
-  #     LiveProps.__set_state__(unquote(socket), %{unquote(key) => unquote(value)}, __MODULE__)
-  #   end
-  # end
-
-  # def send_state(module, id, assigns) do
-  #   Phoenix.LiveView.send_update(module, [lp_command: :set_state, id: id] ++ assigns)
   # end
 
   def __set_state__(socket, assigns, module) do
@@ -226,12 +181,6 @@ defmodule LiveProps do
     define(:state, name, type, opts, module)
   end
 
-  # defmacro assign_states(socket, kind) do
-  #   quote bind_quoted: [socket: socket, kind: kind] do
-  #     LiveProps.__assigns_states__(socket, kind, __MODULE__)
-  #   end
-  # end
-
   defp get_assigns_value_key(:computed), do: :compute
   defp get_assigns_value_key(:async), do: :compute
   defp get_assigns_value_key(:defaults), do: :default
@@ -242,14 +191,26 @@ defmodule LiveProps do
   defp should_force?(:computed), do: true
   defp should_force?(_), do: false
 
-  def __assign_props__(socket, kind, module) do
+  # def __assign_props__(socket, kind, module) do
+  #   value_key = get_assigns_value_key(kind)
+  #   call_functions? = should_call_functions?(kind)
+  #   props = module.__props__(kind)
+  #   force? = should_force?(kind)
+
+  #   Enum.reduce(props, socket, fn prop, socket ->
+  #     assign(socket, prop, value_key, call_functions?, force?)
+  #   end)
+  # end
+
+  def __put_props__(assigns, kind, module) do
     value_key = get_assigns_value_key(kind)
     call_functions? = should_call_functions?(kind)
     props = module.__props__(kind)
     force? = should_force?(kind)
 
-    Enum.reduce(props, socket, fn prop, socket ->
-      assign(socket, prop, value_key, call_functions?, force?)
+    Enum.reduce(props, assigns, fn prop, assigns ->
+      IO.inspect(force?, label: "should force prop #{inspect(prop.name)}")
+      put(assigns, prop, value_key, call_functions?, force?)
     end)
   end
 
@@ -263,10 +224,24 @@ defmodule LiveProps do
     end)
   end
 
+  defp put(assigns, attribute, value_key, call_functions?, force?) do
+    value =
+      if is_function(attribute[value_key]) && call_functions? do
+        attribute[value_key].(assigns)
+      else
+        attribute[value_key]
+      end
+
+    case force? do
+      true -> Map.put(assigns, attribute.name, value)
+      false -> Map.put_new_lazy(assigns, attribute.name, fn -> value end)
+    end
+  end
+
   defp assign(socket, attribute, value_key, call_functions?, force?) do
     value =
       if is_function(attribute[value_key]) && call_functions? do
-        attribute[value_key].(socket)
+        attribute[value_key].(socket.assigns)
       else
         attribute[value_key]
       end

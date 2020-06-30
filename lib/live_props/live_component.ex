@@ -10,12 +10,30 @@ defmodule LiveProps.LiveComponent do
   end
 
   defmacro __before_compile__(env) do
-    # TODO - maybe assigns defaults in preload?
-
     [
+      quoted_preload(env),
       quoted_update(env),
       quoted_mount(env)
     ]
+  end
+
+  def quoted_preload(env) do
+    if Module.defines?(env.module, {:preload, 1}) do
+      quote do
+        defoverridable preload: 1
+
+        def preload(list_of_assigns) do
+          LiveProps.LiveComponent.__preload__(list_of_assigns, __MODULE__)
+          super(list_of_assigns)
+        end
+      end
+    else
+      quote do
+        def preload(list_of_assigns) do
+          LiveProps.LiveComponent.__preload__(list_of_assigns, __MODULE__)
+        end
+      end
+    end
   end
 
   defp quoted_update(env) do
@@ -60,6 +78,20 @@ defmodule LiveProps.LiveComponent do
     end
   end
 
+  def __preload__(list_of_assigns, module) do
+    Enum.map(list_of_assigns, fn
+      %{lp_command: :set_state} = assigns ->
+        assigns
+        # |> Map.drop([:lp_command, :id])
+
+      assigns ->
+        assigns
+        |> drop_states(module)
+        |> LiveProps.__put_props__(:defaults, module)
+        |> LiveProps.__put_props__(:computed, module)
+    end)
+  end
+
   def __update__(%{lp_command: :set_state} = assigns, socket, module) do
     new_assigns = Map.drop(assigns, [:lp_command, :id])
 
@@ -73,9 +105,7 @@ defmodule LiveProps.LiveComponent do
 
     {:ok,
       socket
-      |> assign(drop_states(assigns, module))
-      |> LiveProps.__assign_props__(:defaults, module)
-      |> LiveProps.__assign_props__(:computed, module)}
+      |> assign(drop_states(assigns, module))}
   end
 
   def __mount__(socket, module) do

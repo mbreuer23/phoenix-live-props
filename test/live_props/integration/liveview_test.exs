@@ -43,6 +43,7 @@ defmodule LiveProps.IntegrationTest.LiveView do
 
     prop :user_id, :integer, default: nil
     prop :show_comments, :boolean, default: true
+    prop :has_user_id, :boolean, compute: :has_user_id
 
     state :comments, :list, default: [:comment1, :comment2]
     state :comment_count, :count, compute: :get_count
@@ -65,8 +66,12 @@ defmodule LiveProps.IntegrationTest.LiveView do
       {:noreply, set_state(socket, %{comments: [1, 2, 3, 4]})}
     end
 
-    def get_count(%{assigns: assigns}) do
+    def get_count(assigns) do
       length(assigns[:comments])
+    end
+
+    def has_user_id(assigns) do
+      Map.has_key?(assigns, :user_id)
     end
   end
 

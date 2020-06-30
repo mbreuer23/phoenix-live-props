@@ -29,7 +29,7 @@ defmodule LiveProps.LiveComponentTest do
       end
 
       def get_count(_), do: 10
-      def get_items(%{assigns: assigns}) do
+      def get_items(assigns) do
         case assigns[:ready] do
           :updated ->
             [:updated_items]

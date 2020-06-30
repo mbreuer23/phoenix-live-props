@@ -98,20 +98,36 @@ defmodule LiveProps do
   '''
 
   defmacro __using__(include: include) do
-    imports = %{
-      prop: [{:prop, 2}, {:prop, 3}],
-      state: [{:state, 2}, {:state, 3}, {:send_state, 3}, {:set_state, 2}, {:set_state, 3}]
-    }
-
-    functions = for func <- include, imp <- imports[func], into: [], do: imp
     attribute_names = for func <- include, into: [], do: prefix(func)
 
-    quote do
-      import unquote(__MODULE__), only: unquote(functions)
-      @before_compile unquote(__MODULE__)
+    postlude =
+      quote do
+        @before_compile unquote(__MODULE__)
 
-      for func <- unquote(attribute_names) do
-        Module.register_attribute(__MODULE__, func, accumulate: true)
+        for func <- unquote(attribute_names) do
+          Module.register_attribute(__MODULE__, func, accumulate: true)
+        end
+      end
+
+    [
+      maybe_import_props(include),
+      maybe_import_states(include),
+      postlude
+    ]
+  end
+
+  defp maybe_import_props(include) do
+    if :prop in include do
+      quote do
+        import LiveProps.Props
+      end
+    end
+  end
+
+  defp maybe_import_states(include) do
+    if :state in include do
+      quote do
+        import LiveProps.States
       end
     end
   end
@@ -124,57 +140,57 @@ defmodule LiveProps do
     ]
   end
 
-  @doc """
-  Define a property with the given name and type. Returns `:ok`
+  # @doc """
+  # Define a property with the given name and type. Returns `:ok`
 
-  This macro is meant to be called within a LiveComponent only.
-  Types can be any atom and are just for documentation purposes.
+  # This macro is meant to be called within a LiveComponent only.
+  # Types can be any atom and are just for documentation purposes.
 
-  ## Options:
+  # ## Options:
 
-    * `:default` - A default value to assign to the prop.
-    * `:required` - boolean.  If true, an error will be raised
-    if the prop is not passed to the component.
-    * `:compute` - 1-arity function that takes the socket as an argument
-    and returns the value to be assigned.  Can be an atom of the name
-    of a function in your component or a remote function call like `&MyModule.compute/1`
-  """
-  @spec prop(name :: atom(), type :: atom(), opts :: list()) :: :ok
-  defmacro prop(name, type, opts \\ []) do
-    quote do
-      LiveProps.__prop__(unquote(name), unquote(type), unquote(opts), __MODULE__)
-    end
-  end
+  #   * `:default` - A default value to assign to the prop.
+  #   * `:required` - boolean.  If true, an error will be raised
+  #   if the prop is not passed to the component.
+  #   * `:compute` - 1-arity function that takes the socket as an argument
+  #   and returns the value to be assigned.  Can be an atom of the name
+  #   of a function in your component or a remote function call like `&MyModule.compute/1`
+  # """
+  # @spec prop(name :: atom(), type :: atom(), opts :: list()) :: :ok
+  # defmacro prop(name, type, opts \\ []) do
+  #   quote do
+  #     LiveProps.__prop__(unquote(name), unquote(type), unquote(opts), __MODULE__)
+  #   end
+  # end
 
-  @doc """
-  Define state of given name and type.  Returns :ok.
+  # @doc """
+  # Define state of given name and type.  Returns :ok.
 
-  Types can be any atom and are just for documentation purposes.
+  # Types can be any atom and are just for documentation purposes.
 
 
-  """
-  @spec state(name :: atom(), type :: atom(), opts :: list()) :: :ok
-  defmacro state(name, type, opts \\ []) do
-    quote do
-      LiveProps.__state__(unquote(name), unquote(type), unquote(opts), __MODULE__)
-    end
-  end
+  # """
+  # @spec state(name :: atom(), type :: atom(), opts :: list()) :: :ok
+  # defmacro state(name, type, opts \\ []) do
+  #   quote do
+  #     LiveProps.__state__(unquote(name), unquote(type), unquote(opts), __MODULE__)
+  #   end
+  # end
 
-  defmacro set_state(socket, assigns) do
-    quote do
-      LiveProps.__set_state__(unquote(socket), unquote(assigns), __MODULE__)
-    end
-  end
+  # defmacro set_state(socket, assigns) do
+  #   quote do
+  #     LiveProps.__set_state__(unquote(socket), unquote(assigns), __MODULE__)
+  #   end
+  # end
 
-  defmacro set_state(socket, key, value) do
-    quote do
-      LiveProps.__set_state__(unquote(socket), %{unquote(key) => unquote(value)}, __MODULE__)
-    end
-  end
+  # defmacro set_state(socket, key, value) do
+  #   quote do
+  #     LiveProps.__set_state__(unquote(socket), %{unquote(key) => unquote(value)}, __MODULE__)
+  #   end
+  # end
 
-  def send_state(module, id, assigns) do
-    Phoenix.LiveView.send_update(module, [lp_command: :set_state, id: id] ++ assigns)
-  end
+  # def send_state(module, id, assigns) do
+  #   Phoenix.LiveView.send_update(module, [lp_command: :set_state, id: id] ++ assigns)
+  # end
 
   def __set_state__(socket, assigns, module) do
     assigns = Enum.into(assigns, %{})
@@ -210,11 +226,11 @@ defmodule LiveProps do
     define(:state, name, type, opts, module)
   end
 
-  defmacro assign_states(socket, kind) do
-    quote bind_quoted: [socket: socket, kind: kind] do
-      LiveProps.__assigns_states__(socket, kind, __MODULE__)
-    end
-  end
+  # defmacro assign_states(socket, kind) do
+  #   quote bind_quoted: [socket: socket, kind: kind] do
+  #     LiveProps.__assigns_states__(socket, kind, __MODULE__)
+  #   end
+  # end
 
   defp get_assigns_value_key(:computed), do: :compute
   defp get_assigns_value_key(:async), do: :compute

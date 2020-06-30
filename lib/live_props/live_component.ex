@@ -1,6 +1,6 @@
 defmodule LiveProps.LiveComponent do
   import Phoenix.LiveView
-
+  require LiveProps
   defmacro __using__(_) do
     quote do
       use LiveProps, include: [:state, :prop]

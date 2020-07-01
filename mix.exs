@@ -11,14 +11,23 @@ defmodule LiveProps.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
+      # compilers: compilers(Mix.env()),
       docs: docs()
     ]
+  end
+
+  def compilers(:prod) do
+    Mix.compilers()
+  end
+
+  def compilers(_) do
+    [:phoenix] ++ Mix.compilers()
   end
 
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger, :phoenix]
     ]
   end
 
@@ -31,7 +40,7 @@ defmodule LiveProps.MixProject do
     [
       {:phoenix_live_view, "~> 0.13.2"},
       {:floki, ">= 0.0.0", only: :test},
-      {:jason, "~> 1.2", only: :test},
+      {:jason, "~> 1.2", only: [:dev, :test]},
       {:ex_doc, "~> 0.22", only: :dev, runtime: false}
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]

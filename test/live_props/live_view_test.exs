@@ -1,65 +1,150 @@
 defmodule LiveProps.LiveViewTest do
-  use ExUnit.Case
+  use LiveProps.ConnCase
 
-  describe "LiveView" do
-    alias Phoenix.LiveView.Socket
-
-    defmodule Example do
+  defmodule Examples do
+    defmodule LiveViewNoMount do
       use Phoenix.LiveView
       use LiveProps.LiveView
 
-      state :ready, :boolean, default: true
-      state :posts, :list, compute: :get_posts
-      state :async_posts, :list, compute: :get_posts, after_connect: true
+      state :user_id, :integer, default: 1
+      state :sort, :atom, default: :asc
+      state :temperature, :float, compute: :get_temp
+      state :async_value, :atom, default: "not loaded", compute: :get_async, after_connect: true
 
       def render(assigns) do
         ~L"""
-        <%= @ready %>
+        <%= if has_expected_values(assigns) do %>
+          All assigns available
+        <% end %>
+        <%= @async_value %>
+        """
+      end
+
+      defp has_expected_values(assigns) do
+        assigns.user_id == 1 && assigns.sort == :asc && assigns.temperature == "temperature-1"
+      end
+
+      def get_async(_assigns) do
+        "has been loaded"
+      end
+
+      def get_temp(assigns) do
+        "temperature-#{inspect(assigns.user_id)}"
+      end
+    end
+
+    defmodule LiveViewWithMount do
+      use Phoenix.LiveView
+      use LiveProps.LiveView
+
+      state :user_id, :integer
+      state :temperature, :float, compute: :get_temperature
+      state :async_value, :string, default: "loading", compute: :get_async, after_connect: true
+
+      def render(assigns) do
+        ~L"""
+        <%= message(assigns) %>
+        <%= @async_value %>
         """
       end
 
       def mount(_, _, socket) do
-        defaults_available = socket.assigns[:ready]
-        {:ok, assign(socket, :defaults_available, defaults_available)}
+        {:ok, assign(socket, :user_id, 1)}
       end
 
-      def get_posts(assigns) do
-        case assigns.ready do
-          true -> [:post1, :post2]
-          false -> []
+      def get_async(_) do
+        "loaded"
+      end
+
+      defp message(assigns) do
+        if assigns.user_id == 1 && assigns.temperature == "temperature-1" do
+          "expected assigns available"
+        else
+          "missing assigns"
         end
+      end
+
+      def get_temperature(assigns) do
+        "temperature-#{inspect(assigns.user_id)}"
       end
     end
 
-    test "mounts properly" do
-      {:ok, socket} = Example.mount(%{}, %{}, %Socket{connected?: false})
-      assert socket.assigns.ready == true
-      assert socket.assigns.posts == [:post1, :post2]
-      refute Map.has_key?(socket.assigns, :async_count)
+    defmodule LiveViewWithMountAndOptions do
+      use Phoenix.LiveView
+      use LiveProps.LiveView
+
+      state :items, :list, compute: :get_init_items
+
+      def render(assigns) do
+        ~L"""
+        <div id="list" phx-update="append">
+          <%= for item <- @items do %>
+            <div id="<%= item.id %>">value <%= item.value %></div>
+          <% end %>
+        </div>
+        <button phx-click="update">Update</button>
+        """
+      end
+
+      def mount(_, _, socket) do
+        {:ok, socket, temporary_assigns: [items: []]}
+      end
+
+      def handle_event("update", _, socket) do
+        {:noreply, assign(socket, :items, get_new_items(socket))}
+      end
+
+      def get_init_items(_) do
+        1..5
+        |> Enum.map(&(%{id: &1, value: &1}))
+      end
+
+      def get_new_items(_) do
+        6..10
+        |> Enum.map(&(%{id: &1, value: &1}))
+      end
     end
+  end
 
-    test "sends message on connect and asynchronously computes appropriate states" do
-      {:ok, socket} = Example.mount(%{}, %{}, %Socket{connected?: true})
-      assert_received {:liveprops, :after_connect, []}
-      refute socket.assigns[:async_posts] == [:post1, :post2]
+  test "LiveView with no mount renders", %{conn: conn} do
+    {:ok, view, html} = live_isolated(conn, Examples.LiveViewNoMount)
 
-      {:noreply, socket} = Example.handle_info({:liveprops, :after_connect, []}, socket)
-      assert socket.assigns.async_posts == [:post1, :post2]
-    end
+    # default and computed states available
+    assert html =~ "All assigns available"
 
-    test "respects user-defined mount" do
-      {:ok, socket} = Example.mount(%{}, %{}, %Socket{})
-      assert socket.assigns[:defaults_available] == true
-    end
+    # after_connect states available on next render
+    assert html =~ "not loaded"
+    assert view |> render() =~ "has been loaded"
+  end
 
-    test "does not exposes prop/3" do
-      assert_raise CompileError, ~r/undefined function prop\/3/, fn ->
-        defmodule Error do
-          use Phoenix.LiveView
-          use LiveProps.LiveView
+  test "Works with user mount that returns {:ok, socket}", %{conn: conn} do
+    {:ok, view, html} = live_isolated(conn, Examples.LiveViewWithMount)
+    assert html =~ "expected assigns available"
+    assert html =~ "loading"
 
-          prop :prop1, :string, default: "prop1"
-        end
+    assert view |> render() =~ "loaded"
+  end
+
+  test "works with user mount that returns {:ok, socket, options}", %{conn: conn} do
+    {:ok, view, html} = live_isolated(conn, Examples.LiveViewWithMountAndOptions)
+
+    Enum.each(1..5, fn i -> assert html =~ "value #{i}" end)
+
+    html =
+      view
+      |> element("button", "Update")
+      |> render_click()
+
+    Enum.each(1..10, fn i -> assert html =~ "value #{i}" end)
+  end
+
+  test "LiveView does not exposes prop/3" do
+    assert_raise CompileError, ~r/undefined function prop\/3/, fn ->
+      defmodule Error do
+        use Phoenix.LiveView
+        use LiveProps.LiveView
+
+        prop :prop1, :string, default: "prop1"
       end
     end
   end

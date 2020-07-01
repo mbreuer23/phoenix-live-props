@@ -102,11 +102,10 @@ defmodule LiveProps.LiveView do
   def __mount__(_params, _session, socket, module, callback \\ nil) do
     if connected?(socket), do: send(self(), {:liveprops, :after_connect, []})
 
-    socket =
-      socket
-      |> LiveProps.__assign_states__(:defaults, module)
-
-    case maybe_call_callback(socket, callback) do
+    socket
+    |> LiveProps.__assign_states__(:defaults, module)
+    |> maybe_call_callback(callback)
+    |> case do
       {:ok, socket} ->
         socket = LiveProps.__assign_states__(socket, :computed, module)
         {:ok, socket}

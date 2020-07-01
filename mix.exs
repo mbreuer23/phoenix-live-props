@@ -11,17 +11,8 @@ defmodule LiveProps.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
-      # compilers: compilers(Mix.env()),
       docs: docs()
     ]
-  end
-
-  def compilers(:prod) do
-    Mix.compilers()
-  end
-
-  def compilers(_) do
-    [:phoenix] ++ Mix.compilers()
   end
 
   # Run "mix help compile.app" to learn about applications.

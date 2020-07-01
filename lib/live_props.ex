@@ -67,8 +67,8 @@ defmodule LiveProps do
   it a default value, which is assigned on mount behind the scenes.  We could also add computed states
   that depend on other states.  In the "toggle_mode" handler we use `LiveProps.States.set_state/3` to
   update the `:mode`.  We could have just done a regular `Phoenix.LiveView.assign/3` call but
-  using `set_state/3` if useful if when we want to trigger the re-calculation of other states
-  as well. (in this case, there are none)
+  using `set_state/3` is useful when we want to trigger the re-calculation of other states
+  as well (in this case, there are none).
 
   Notice what our component does not have: a `c:Phoenix.LiveComponent.mount/1`, `c:Phoenix.LiveComponent.update/2`
   or `c:Phoenix.LiveComponent.preload/1` callback.  LiveProps handles that for you, by injecting lightweight callbacks
@@ -129,6 +129,35 @@ defmodule LiveProps do
     ]
   end
 
+  def __prop__(name, type, opts, module) do
+    define(:prop, name, type, opts, module)
+  end
+
+  # def __put_props__(assigns, kinds, module) when is_list(kinds) do
+  #   for kind <- kinds, reduce: assigns do
+  #     assigns ->
+  #       __put_props__(assigns, kind, module)
+  #   end
+  # end
+
+  def __put_props__(assigns, kind, module) do
+    for prop <- module.__props__(kind), reduce: assigns do
+      assigns ->
+        put_value(assigns, prop, kind)
+    end
+  end
+
+  def __assign_props__(socket, kind, module) do
+    for prop <- module.__props__(kind), reduce: socket do
+      socket ->
+        assign_value(socket, prop, kind)
+    end
+  end
+
+  def __state__(name, type, opts, module) do
+    define(:state, name, type, opts, module)
+  end
+
   def __set_state__(socket, assigns, module) do
     assigns = Enum.into(assigns, %{})
 
@@ -142,82 +171,39 @@ defmodule LiveProps do
     |> __assign_states__(:async, module)
   end
 
-  def __prop__(name, type, opts, module) do
-    define(:prop, name, type, opts, module)
-  end
-
-  def __state__(name, type, opts, module) do
-    define(:state, name, type, opts, module)
-  end
-
-  defp get_assigns_value_key(:computed), do: :compute
-  defp get_assigns_value_key(:async), do: :compute
-  defp get_assigns_value_key(:defaults), do: :default
-
-  defp should_call_functions?(kind) when kind in [:computed, :async], do: true
-  defp should_call_functions?(_), do: false
-
-  defp should_force?(:computed), do: true
-  defp should_force?(_), do: false
-
-  def __assign_props__(socket, kind, module) do
-    value_key = get_assigns_value_key(kind)
-    call_functions? = should_call_functions?(kind)
-    props = module.__props__(kind)
-    force? = should_force?(kind)
-
-    Enum.reduce(props, socket, fn prop, socket ->
-      assign(socket, prop, value_key, call_functions?, force?)
-    end)
-  end
-
-  def __put_props__(assigns, kind, module) do
-    value_key = get_assigns_value_key(kind)
-    call_functions? = should_call_functions?(kind)
-    props = module.__props__(kind)
-    force? = should_force?(kind)
-
-    Enum.reduce(props, assigns, fn prop, assigns ->
-      put(assigns, prop, value_key, call_functions?, force?)
-    end)
+  def __put_states__(assigns, kind, module) do
+    for state <- module.__states__(kind), reduce: assigns do
+      assigns ->
+        put_value(assigns, state, kind)
+    end
   end
 
   def __assign_states__(socket, kind, module) do
-    value_key = get_assigns_value_key(kind)
-    call_functions? = should_call_functions?(kind)
-    states = module.__states__(kind)
-
-    Enum.reduce(states, socket, fn state, socket ->
-      assign(socket, state, value_key, call_functions?, true)
-    end)
-  end
-
-  defp put(assigns, attribute, value_key, call_functions?, force?) do
-    value =
-      if is_function(attribute[value_key]) && call_functions? do
-        attribute[value_key].(assigns)
-      else
-        attribute[value_key]
-      end
-
-    case force? do
-      true -> Map.put(assigns, attribute.name, value)
-      false -> Map.put_new_lazy(assigns, attribute.name, fn -> value end)
+    for state <- module.__states__(kind), reduce: socket do
+      socket ->
+        assign_value(socket, state, kind)
     end
   end
 
-  defp assign(socket, attribute, value_key, call_functions?, force?) do
-    value =
-      if is_function(attribute[value_key]) && call_functions? do
-        attribute[value_key].(socket.assigns)
-      else
-        attribute[value_key]
-      end
+  defp get_value(:defaults, attribute, _assigns), do: attribute[:default]
+  defp get_value(kind, attribute, assigns) when kind in [:computed, :async] do
+    attribute[:compute].(assigns)
+  end
 
-    case force? do
-      true -> Phoenix.LiveView.assign(socket, attribute.name, value)
-      false -> Phoenix.LiveView.assign_new(socket, attribute.name, fn -> value end)
-    end
+  defp put_value(map, attribute, :computed) do
+    Map.put(map, attribute.name, get_value(:computed, attribute, map))
+  end
+
+  defp put_value(map, attribute, :defaults) do
+    Map.put_new(map, attribute.name, get_value(:defaults, attribute, map))
+  end
+
+  defp assign_value(socket, attribute, kind) when kind in [:computed, :async] do
+    Phoenix.LiveView.assign(socket, attribute.name, get_value(kind, attribute, socket.assigns))
+  end
+
+  defp assign_value(socket, attribute, :defaults) do
+    Phoenix.LiveView.assign_new(socket, attribute.name, fn -> get_value(:defaults, attribute, socket.assigns) end)
   end
 
   defp define(attribute, name, type, opts, module) do

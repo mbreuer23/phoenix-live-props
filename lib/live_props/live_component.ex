@@ -23,7 +23,7 @@ defmodule LiveProps.LiveComponent do
   states will already be assigned to the socket.  In your update/2 callback, default and computed props
   will have been assigned too.
 
-  If you define a `c.Phoenix.LiveComponent.update/2` callback, which takes a list of assigns,
+  If you define a `c.Phoenix.LiveComponent.preload/1` callback, which takes a list of assigns,
   default and computed props will be available in all assigns.
 
   ### Pitfalls
@@ -62,8 +62,8 @@ defmodule LiveProps.LiveComponent do
         defoverridable preload: 1
 
         def preload(list_of_assigns) do
-          list_of_assigns = LiveProps.LiveComponent.__preload__(list_of_assigns, __MODULE__)
-          super(list_of_assigns)
+          callback = fn list -> super(list) end
+          LiveProps.LiveComponent.__preload__(list_of_assigns, __MODULE__, callback)
         end
       end
     end
@@ -76,15 +76,16 @@ defmodule LiveProps.LiveComponent do
       quote do
         defoverridable update: 2
 
-        def update(%{lp_command: :set_state} = assigns, socket) do
-          LiveProps.LiveComponent.__update__(assigns, socket, __MODULE__, unquote(preloaded))
-        end
-
         def update(assigns, socket) do
-          {:ok, socket} =
-            LiveProps.LiveComponent.__update__(assigns, socket, __MODULE__, unquote(preloaded))
+          callback = fn socket -> super(assigns, socket) end
 
-          super(assigns, socket)
+          LiveProps.LiveComponent.__update__(
+            assigns,
+            socket,
+            __MODULE__,
+            unquote(preloaded),
+            callback
+          )
         end
       end
     else
@@ -102,8 +103,8 @@ defmodule LiveProps.LiveComponent do
         defoverridable mount: 1
 
         def mount(socket) do
-          {:ok, socket} = LiveProps.LiveComponent.__mount__(socket, __MODULE__)
-          super(socket)
+          callback = fn s -> super(s) end
+          LiveProps.LiveComponent.__mount__(socket, __MODULE__, callback)
         end
       end
     else
@@ -115,57 +116,75 @@ defmodule LiveProps.LiveComponent do
     end
   end
 
-  def __preload__(list_of_assigns, module) do
-    Enum.map(list_of_assigns, fn
-      %{lp_command: :set_state} = assigns ->
-        assigns
-
-      assigns ->
-        assigns
-        |> drop_states(module)
-        |> LiveProps.__put_props__(:defaults, module)
-        |> LiveProps.__put_props__(:computed, module)
-    end)
-  end
-
-  def __update__(%{lp_command: :set_state} = assigns, socket, module, _preloaded) do
-    new_assigns = Map.drop(assigns, [:lp_command, :id])
-
-    {:ok,
-     socket
-     |> LiveProps.__set_state__(new_assigns, module)}
-  end
-
-  def __update__(assigns, socket, module, preloaded?) do
-    require_props!(assigns, module)
-
-    socket =
-      case preloaded? do
-        true ->
-          socket
-          |> assign(assigns)
-
-        false ->
-          socket
-          |> assign(drop_states(assigns, module))
-          |> LiveProps.__assign_props__(:defaults, module)
-          |> LiveProps.__assign_props__(:computed, module)
-      end
-
-    {:ok, socket}
-  end
-
-  def __mount__(socket, module) do
+  def __mount__(socket, module, callback \\ nil) do
     # TODO: As of now async states are not treated any
     # differently in a live component, where socket should already be connected.
     # Should be warn the user if they try to user :after_connect option
     # in a component?
-    {:ok,
-     socket
-     |> LiveProps.__assign_states__(:defaults, module)
-     |> LiveProps.__assign_states__(:computed, module)
-     |> LiveProps.__assign_states__(:async, module)}
+    socket
+    |> LiveProps.__assign_states__(:defaults, module)
+    |> LiveProps.__assign_states__(:computed, module)
+    |> LiveProps.__assign_states__(:async, module)
+    |> maybe_call_callback(callback)
   end
+
+  def __preload__(list_of_assigns, module, callback) do
+    case is_update_command(list_of_assigns) do
+      false ->
+        list_of_assigns
+        |> put_props_in_list(module)
+        |> callback.()
+
+      true ->
+        list_of_assigns
+    end
+  end
+
+  def __update__(assigns, socket, module, preloaded?, callback \\ nil) do
+    case {is_update_command(assigns), preloaded?} do
+      {true, _} ->
+        socket = LiveProps.__set_state__(socket, assigns, module)
+        {:ok, socket}
+
+      {_, true} ->
+        require_props!(assigns, module)
+
+        socket
+        |> assign(assigns)
+        |> maybe_call_callback(callback)
+
+      {_, false} ->
+        require_props!(assigns, module)
+
+        socket
+        |> assign(drop_states(assigns, module))
+        |> LiveProps.__assign_props__(:defaults, module)
+        |> LiveProps.__assign_props__(:computed, module)
+        |> maybe_call_callback(callback)
+    end
+  end
+
+  defp maybe_call_callback(socket, nil), do: {:ok, socket}
+  defp maybe_call_callback(socket, callback), do: callback.(socket)
+
+  defp put_props_in_list(list_of_assigns, module) do
+    Enum.map(list_of_assigns, fn assigns ->
+      assigns
+      |> drop_states(module)
+      |> LiveProps.__put_props__(:defaults, module)
+      |> LiveProps.__put_props__(:computed, module)
+    end)
+  end
+
+  defp is_update_command(%{lp_command: :set_state}), do: true
+
+  defp is_update_command(list_of_assigns) when is_list(list_of_assigns) do
+    list_of_assigns
+    |> List.first()
+    |> is_update_command()
+  end
+
+  defp is_update_command(_assigns), do: false
 
   defp drop_states(assigns, module) do
     states = for s <- module.__states__(:all), do: s.name

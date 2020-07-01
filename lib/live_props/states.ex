@@ -24,7 +24,8 @@ defmodule LiveProps.States do
   @doc """
   Same as `set_state/3` but with a list or map of assigns.
   """
-  @spec set_state(socket :: Phoenix.LiveView.Socket.t(), assigns :: list() | map()) :: Phoenix.LiveView.Socket.t()
+  @spec set_state(socket :: Phoenix.LiveView.Socket.t(), assigns :: list() | map()) ::
+          Phoenix.LiveView.Socket.t()
   defmacro set_state(socket, assigns) do
     quote do
       LiveProps.__set_state__(unquote(socket), unquote(assigns), __MODULE__)
@@ -38,7 +39,8 @@ defmodule LiveProps.States do
 
   If the given `state` is has not been declared as a state, it will be ignored.
   """
-  @spec set_state(socket :: Phoenix.LiveView.Socket.t(), state :: atom(), value :: any()) :: Phoenix.LiveView.Socket.t()
+  @spec set_state(socket :: Phoenix.LiveView.Socket.t(), state :: atom(), value :: any()) ::
+          Phoenix.LiveView.Socket.t()
   defmacro set_state(socket, state, value) do
     quote do
       LiveProps.__set_state__(unquote(socket), %{unquote(state) => unquote(value)}, __MODULE__)

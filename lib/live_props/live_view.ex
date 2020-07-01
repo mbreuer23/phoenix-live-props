@@ -86,15 +86,8 @@ defmodule LiveProps.LiveView do
         defoverridable mount: 3
 
         def mount(params, session, socket) do
-          if connected?(socket), do: send(self(), {:liveprops, :after_connect, []})
-
-          socket = LiveProps.__assign_states__(socket, :defaults, __MODULE__)
-
-          {:ok, socket} = super(params, session, socket)
-
-          socket = LiveProps.__assign_states__(socket, :computed, __MODULE__)
-
-          {:ok, socket}
+          callback = fn socket -> super(params, session, socket) end
+          LiveProps.LiveView.__mount__(params, session, socket, __MODULE__, callback)
         end
       end
     else
@@ -106,17 +99,24 @@ defmodule LiveProps.LiveView do
     end
   end
 
-  @doc false
-  def __mount__(_params, _session, socket, module) do
+  def __mount__(_params, _session, socket, module, callback \\ nil) do
     if connected?(socket), do: send(self(), {:liveprops, :after_connect, []})
 
-    {:ok,
-     socket
-     |> LiveProps.__assign_states__(:defaults, module)
-     |> LiveProps.__assign_states__(:computed, module)}
+    socket =
+      socket
+      |> LiveProps.__assign_states__(:defaults, module)
+
+    case maybe_call_callback(socket, callback) do
+      {:ok, socket} ->
+        socket = LiveProps.__assign_states__(socket, :computed, module)
+        {:ok, socket}
+
+      {:ok, socket, options} ->
+        socket = LiveProps.__assign_states__(socket, :computed, module)
+        {:ok, socket, options}
+    end
   end
 
-  @doc false
   def __handle_info__({event, args}, socket, module) do
     apply(__MODULE__, event, [socket, module] ++ args)
   end
@@ -126,5 +126,11 @@ defmodule LiveProps.LiveView do
     {:noreply,
      socket
      |> LiveProps.__assign_states__(:async, module)}
+  end
+
+  defp maybe_call_callback(socket, nil), do: {:ok, socket}
+
+  defp maybe_call_callback(socket, callback) do
+    callback.(socket)
   end
 end

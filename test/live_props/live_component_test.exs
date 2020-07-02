@@ -37,10 +37,10 @@ defmodule LiveProps.LiveComponentTest do
 
   describe "ComponentNoMount" do
     test "renders", %{conn: conn} do
-      {:ok, view, html} = live_isolated(conn, LiveView)
+      {:ok, _view, html} = live_isolated(conn, LiveView)
       assert html =~ "prop1 = 1"
       assert html =~ "prop2 = 3"
-      assert html =~ "state1 = 1"
+      assert html =~ "state1 = &quot;state1"
     end
   end
 

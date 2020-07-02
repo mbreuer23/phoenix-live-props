@@ -42,7 +42,7 @@ defmodule LiveProps.LiveComponent.CustomUpdateTest do
       end)
     end
 
-    def update(assigns, socket) do
+    def update(_assigns, socket) do
       {:ok, socket}
     end
   end

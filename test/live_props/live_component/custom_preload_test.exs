@@ -3,7 +3,7 @@ defmodule LiveProps.LiveComponent.CustomUpdateTest do
   import LiveProps.CreateViews
 
   view Parent do
-    state :items, :list, default: [1,2,3,4]
+    state :items, :list, default: [1, 2, 3, 4]
 
     def render(assigns) do
       ~L"""

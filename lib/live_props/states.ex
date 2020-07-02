@@ -1,4 +1,9 @@
 defmodule LiveProps.States do
+  @moduledoc """
+  Functions for working with states.  These will be imported
+  whenever you `use` LiveProps.LiveComponent or LiveProps.LiveView
+  """
+
   @doc """
   Define state of given name and type.  Returns :ok.
 

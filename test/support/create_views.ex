@@ -1,4 +1,5 @@
 defmodule LiveProps.CreateViews do
+  @moduledoc false
   defmacro view(name, block) do
     quote do
       LiveProps.CreateViews.__view__(unquote(name), unquote(Macro.escape(block)), __ENV__)

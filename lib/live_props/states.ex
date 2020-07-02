@@ -12,7 +12,7 @@ defmodule LiveProps.States do
   ### Options:
 
     * `:default` - A default value that will be assigned on mount.
-    * `:compute` - 1-arity function that takes the socket as an argument
+    * `:compute` - 1-arity function that takes the socket assigns as an argument
     and returns the value to be assigned.  Can be an atom of the name
     of a function in your component or a remote function call like `&MyModule.compute/1`.
     If you use an atom, the referenced function must be **public**.

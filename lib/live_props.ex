@@ -66,7 +66,7 @@ defmodule LiveProps do
           """
         end
 
-        def get_temperature(%{assigns: assigns} = _socket) do
+        def get_temperature(assigns) do
           Thermostat.get_user_reading(assigns.user_id)
         end
 

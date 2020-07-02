@@ -32,7 +32,7 @@ defmodule LiveProps do
 
         def render(assigns) do
           ~L"""
-          <button class="<%= @button %>"
+          <button class="<%= @class %>"
                   phx-click="<%= @on_click %>">
             <%= @text %>
           </button>

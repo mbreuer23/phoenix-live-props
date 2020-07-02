@@ -15,8 +15,9 @@ defmodule LiveProps.ConnCase do
       # Import conveniences for testing with connections
       # import Plug.Conn
       import Phoenix.ConnTest
-      import LiveProps.ConnCase
       import Phoenix.LiveViewTest
+      import LiveProps.ConnCase
+      import LiveProps.TestHelpers
 
       # alias CervantesWeb.Router.Helpers, as: Routes
 

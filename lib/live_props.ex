@@ -158,6 +158,28 @@ defmodule LiveProps do
     define(:state, name, type, opts, module)
   end
 
+  def __set_state__!(socket, assigns, module) do
+    assigns = Enum.into(assigns, %{})
+    supplied_states = Map.keys(assigns)
+    valid_states = for s <- module.__states__(:all), do: s.name
+
+    case supplied_states -- valid_states do
+      [] ->
+        __set_state__(socket, assigns, module)
+
+      keys ->
+        raise ArgumentError, """
+        The following keys are not valid states for #{inspect(module)}.
+
+        #{inspect(keys)}
+
+        The following states are defined:
+
+        #{inspect(valid_states)}
+        """
+    end
+  end
+
   def __set_state__(socket, assigns, module) do
     assigns = Enum.into(assigns, %{})
 

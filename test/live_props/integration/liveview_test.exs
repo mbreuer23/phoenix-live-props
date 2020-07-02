@@ -57,7 +57,7 @@ defmodule LiveProps.IntegrationTest.LiveView do
 
     state :comments, :list, default: [:comment1, :comment2]
     state :comment_count, :count, compute: :get_count
-
+    state :crashed, :any, default: nil
     def render(assigns) do
       ~L"""
       <div>
@@ -67,13 +67,29 @@ defmodule LiveProps.IntegrationTest.LiveView do
             <%= inspect(c) %>
           <% end %>
         <% end %>
+        <%= if @crashed do %>
+            <%= @message %>
+        <% end %>
         <button id="set-state" phx-target="<%= @myself %>" phx-click="set-state">Set comments</button>
+        <button id="set-bad-state" phx-target="<%= @myself %>" phx-click="set-bad-state">Set bad state</button>
       </div>
       """
     end
 
     def handle_event("set-state", _, socket) do
       {:noreply, set_state(socket, %{comments: [1, 2, 3, 4]})}
+    end
+
+    def handle_event("set-bad-state", _, socket) do
+        try do
+          {:noreply, set_state!(socket, %{not_a_state: true})}
+        rescue
+          e ->
+            {:noreply,
+              socket
+              |> assign(:crashed, true)
+              |> assign(:message, Exception.message(e))}
+        end
     end
 
     def get_count(assigns) do
@@ -97,7 +113,10 @@ defmodule LiveProps.IntegrationTest.LiveView do
 
     def render(assigns) do
       ~L"""
-      <div><%= @preload %></div>
+      <div>
+        <%= @preload %>
+        <%= @some_state %>
+      </div>
       """
     end
 
@@ -148,13 +167,21 @@ defmodule LiveProps.IntegrationTest.LiveView do
 
     assert html =~ "count: 4"
 
-    # changing Child2 stte with preload hooks
+    # changing Child2 state with preload hooks
     view
     |> element("#update2")
     |> render_click()
 
     html = view |> render()
+    assert html =~ "preloaded"
+    assert html =~ "Child2 updated from parent"
+  end
 
-    html =~ "Child2 updated from parent"
+  test "setting invalid state", %{conn: conn} do
+    {:ok, view, _html} = live_isolated(conn, Parent)
+
+    assert view
+    |> element("#set-bad-state")
+    |> render_click() =~ "not valid state"
   end
 end

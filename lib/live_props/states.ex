@@ -47,6 +47,18 @@ defmodule LiveProps.States do
     end
   end
 
+  defmacro set_state!(socket, assigns) do
+    quote do
+      LiveProps.__set_state__!(unquote(socket), unquote(assigns), __MODULE__)
+    end
+  end
+
+  defmacro set_state!(socket, state, value) do
+    quote do
+      LiveProps.__set_state__!(unquote(socket), %{unquote(state) => unquote(value)}, __MODULE__)
+    end
+  end
+
   @doc """
   A replacement for `Phoenix.LiveView.send_update/2`.  Invalid states will be ignored.
   """

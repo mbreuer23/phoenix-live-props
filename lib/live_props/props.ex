@@ -18,6 +18,7 @@ defmodule LiveProps.Props do
     and returns the value to be assigned.  Can be an atom of the name
     of a function in your component or a remote function call like `&MyModule.compute/1`.
     If you use an atom, the referenced function must be **public**.
+    % `:doc` - String.  Will be added to module documentation.
   """
   @spec prop(name :: atom(), type :: atom(), opts :: list()) :: :ok
   defmacro prop(name, type, opts \\ []) do

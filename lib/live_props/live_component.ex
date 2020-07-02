@@ -150,12 +150,11 @@ defmodule LiveProps.LiveComponent do
     |> maybe_call_callback(callback)
   end
 
-
-  # TODO: require_props! in preload
   def __preload__(list_of_assigns, module, callback) do
     case is_update_command(list_of_assigns) do
       false ->
         list_of_assigns
+        |> Enum.map(fn assigns -> require_props!(assigns, module) end)
         |> put_props_in_list(module)
         |> callback.()
 
@@ -231,5 +230,7 @@ defmodule LiveProps.LiveComponent do
         Recieved: #{inspect(assigns)}
         """
     end
+
+    assigns
   end
 end

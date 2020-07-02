@@ -77,7 +77,7 @@ defmodule LiveProps.IntegrationTest.LiveView do
     end
 
     def handle_event("set-state", _, socket) do
-      {:noreply, set_state(socket, %{comments: [1, 2, 3, 4]})}
+      {:noreply, set_state!(socket, %{comments: [1, 2, 3, 4]})}
     end
 
     def handle_event("set-bad-state", _, socket) do

@@ -1,10 +1,12 @@
 defmodule LiveProps.MixProject do
   use Mix.Project
 
+  @version "0.2.2"
+
   def project do
     [
       app: :live_props,
-      version: "0.2.2",
+      version: @version,
       description: "Props and State for Phoenix LiveView",
       elixir: "~> 1.10",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -48,6 +50,7 @@ defmodule LiveProps.MixProject do
   defp docs do
     [
       main: "LiveProps",
+      source_ref: "v#{@version}",
       source_url: "https://github.com/mbreuer23/phoenix-live-props",
       extra_section: "GUIDES",
       extras: [

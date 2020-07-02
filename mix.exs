@@ -4,7 +4,7 @@ defmodule LiveProps.MixProject do
   def project do
     [
       app: :live_props,
-      version: "0.2.0",
+      version: "0.2.1",
       description: "Props and State for Phoenix LiveView",
       elixir: "~> 1.10",
       elixirc_paths: elixirc_paths(Mix.env()),

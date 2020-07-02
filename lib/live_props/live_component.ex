@@ -150,6 +150,8 @@ defmodule LiveProps.LiveComponent do
     |> maybe_call_callback(callback)
   end
 
+
+  # TODO: require_props! in preload
   def __preload__(list_of_assigns, module, callback) do
     case is_update_command(list_of_assigns) do
       false ->

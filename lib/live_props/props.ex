@@ -1,6 +1,7 @@
 defmodule LiveProps.Props do
   @moduledoc """
-  Functions for working with props.
+  Functions for working with props.  This wil be made available whenever you `use LiveProps.LiveComponent`
+  within a Phoenix.LiveComponent.
   """
 
   @doc """

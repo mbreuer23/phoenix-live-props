@@ -20,6 +20,28 @@ defmodule LiveProps do
   respectively.  LiveComponents can have state and props, while a LiveView can only have state,
   so we'll look at an example LiveComponent to demonstrate both.
 
+  Here's a simple Button component that just has props:
+
+      defmodule ButtonComponent do
+        use Phoenix.LiveComponent
+        use LiveProps.LiveComponent
+
+        prop :class, :string, default: "button"
+        prop :text, :string, default: "Click me"
+        prop :on_click, :string, default: "click_button"
+
+        def render(assigns) do
+          ~L"""
+          <button class="<%= @button %>"
+                  phx-click="<%= @on_click %>">
+            <%= @text %>
+          </button>
+          """
+        end
+
+  In this example we define three props that will be automatically assigned default values, so
+  you don't have to define your own mount or update callbacks to do it yourself.
+
       defmodule MyAppWeb.ThermostatComponent do
         # If you generated an app with mix phx.new --live,
         # the line below would be: use MyAppWeb, :live_component

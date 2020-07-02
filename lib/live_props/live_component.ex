@@ -22,14 +22,14 @@ defmodule LiveProps.LiveComponent do
           """
         end
 
-  In this example we three props that will be given automatically given default values, so
+  In this example we define three props that will be automatically assigned default values, so
   you don't have to define your own mount or update callbacks to do it yourself.
 
-  Another example LiveComponent can be found in the `LiveProps` documentation.
+  More examples can be found in the `LiveProps` documentation.
 
   ### Component Lifecycle
 
-  A Phoenix LiveComponent defines several callbacks, such as `mount/1`, `preload/`, and `update/2`.
+  A Phoenix LiveComponent defines several callbacks, such as `mount/1`, `preload/1`, and `update/2`.
   LiveProps injects these callbacks under the hood so you don't have to (but you can if you want).
 
   If you do not define your own callbacks, the injected ones will be executed as follows:
@@ -50,12 +50,12 @@ defmodule LiveProps.LiveComponent do
 
   ### Pitfalls
 
-  If you try to pass a value to a LiveProps.LiveComponent and it has not been declared
-  in that component as a state using the `LiveProps.States.state/3` macro, it
-  will be ignored. (i.e. will not be assigned to the socket).
+  If you try to pass a value to a LiveProps.LiveComponent and it has been declared
+  in that component as a state, it will be ignored. (i.e. will not be assigned to the socket). State
+  is meant only to be set within the socket or using `LiveProps.States.send_state/3` from a LiveView
+  or another componenet. (You must use `LiveProps.States.send_state/3` rather
+  than `Phoenix.LiveView.send_update/2`)
 
-  For related reasons, `Phoenix.LiveView.send_update/2` will not work with LiveProps LiveComponents,
-  so you'll need to use `LiveProps.States.send_state/3` instead.
 
   '''
 

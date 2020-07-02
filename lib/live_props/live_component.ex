@@ -1,9 +1,31 @@
 defmodule LiveProps.LiveComponent do
-  @moduledoc """
+  @moduledoc ~S'''
   When you `use LiveProps.LiveComponent` in your Phoenix LiveComponent, all of the functionality
   in `LiveProps.Props` and `LiveProps.States` will be imported.
 
-  An example LiveComponent can be found in the `LiveProps` documentation.
+  ### Example
+
+      defmodule ButtonComponent do
+        use Phoenix.LiveComponent
+        use LiveProps.LiveComponent
+
+        prop :class, :string, default: "button"
+        prop :text, :string, default: "Click me"
+        prop :on_click, :string, default: "click_button"
+
+        def render(assigns) do
+          ~L"""
+          <button class="<%= @button %>"
+                  phx-click="<%= @on_click %>">
+            <%= @text %>
+          </button>
+          """
+        end
+
+  In this example we three props that will be given automatically given default values, so
+  you don't have to define your own mount or update callbacks to do it yourself.
+
+  Another example LiveComponent can be found in the `LiveProps` documentation.
 
   ### Component Lifecycle
 
@@ -35,7 +57,7 @@ defmodule LiveProps.LiveComponent do
   For related reasons, `Phoenix.LiveView.send_update/2` will not work with LiveProps LiveComponents,
   so you'll need to use `LiveProps.States.send_state/3` instead.
 
-  """
+  '''
 
   import Phoenix.LiveView
   require LiveProps

@@ -47,9 +47,11 @@ defmodule LiveProps.MixProject do
   defp docs do
     [
       main: "LiveProps",
-      source_url: "https://github.com/mbreuer23/phoenix-live-props"
-      # extra_section: "GUIDES",
-      # extras: extras(),
+      source_url: "https://github.com/mbreuer23/phoenix-live-props",
+      extra_section: "GUIDES",
+      extras: [
+        "guides/formatting.md"
+      ],
       # groups_for_extras: groups_for_extras(),
       # groups_for_modules: groups_for_modules()
     ]
